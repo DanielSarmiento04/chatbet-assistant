@@ -1,0 +1,14 @@
+
+
+services:
+  
+
+  backend:
+    image: my-backend-image:latest
+    container_name: backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/mydatabase
+    depends_on:
+      - db
