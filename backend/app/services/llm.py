@@ -1,7 +1,5 @@
 from langchain_google_genai import (
     ChatGoogleGenerativeAI,
-
-
 )
 
 llm = ChatGoogleGenerativeAI(
@@ -11,3 +9,5 @@ llm = ChatGoogleGenerativeAI(
     timeout=None,
     max_retries=2,
 )
+
+STYLE_INSTRUCTIONS = "Use a conversational tone and write in a chat style without formal formatting or lists and do not use any emojis."

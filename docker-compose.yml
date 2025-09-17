@@ -2,13 +2,38 @@
 
 services:
   
-
   backend:
-    image: my-backend-image:latest
+    image: backend
     container_name: backend
+    build: ./backend/
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgres://user:password@db:5432/mydatabase
+      - GOOGLE_API_KEY=
     depends_on:
-      - db
+      - mongo
+    networks:
+      - interview
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    environment:
+      - TZ=America/Bogota
+      - MONGO_INITDB_ROOT_USERNAME=username
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    ports:
+      - "27017:27017"
+    networks:
+      - interview
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+
+  interview:
+    driver: bridge
