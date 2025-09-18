@@ -6,6 +6,7 @@ Quick test script for ChatBet Assistant Backend
 import asyncio
 import sys
 import os
+from typing import List
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
@@ -26,7 +27,10 @@ async def test_basic_imports():
         from app.models.conversation import ChatRequest, ChatResponse, IntentType
         print("✅ Conversation models imported successfully")
         
-        from app.models.api_models import Tournament, MatchFixture, UserValidationResponse, TokenValidationResponse, Sport, TournamentInfo
+        from app.models.api_models import (
+            Tournament, MatchFixture, UserValidationResponse, TokenValidationResponse, 
+            Sport, TournamentInfo, SportWithTournaments, FixtureInfo, LanguageType, FixtureType
+        )
         print("✅ API models imported successfully")
         
         # Test new validation models
@@ -44,6 +48,11 @@ async def test_basic_imports():
             name_pt_br="Football"
         )
         print("✅ Sports models working correctly")
+        
+        # Test language type validation
+        valid_languages: List[LanguageType] = ["en", "es", "pt_br"]
+        valid_types: List[FixtureType] = ["pre_match", "live"]
+        print("✅ Language and fixture type validation working correctly")
         
         # Test basic configuration
         settings = get_settings()
@@ -90,6 +99,8 @@ async def test_api_client():
         # Check that new sports methods exist
         assert hasattr(client, 'get_sports'), "get_sports method missing"
         assert hasattr(client, 'get_sport_tournaments'), "get_sport_tournaments method missing"
+        assert hasattr(client, 'get_all_tournaments'), "get_all_tournaments method missing"
+        assert hasattr(client, 'get_fixtures_v2'), "get_fixtures_v2 method missing"
         print("✅ New sports methods are available")
         
         # Clean up

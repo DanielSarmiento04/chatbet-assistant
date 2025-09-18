@@ -10,7 +10,7 @@ This saves us from having to write tons of manual validation code.
 """
 
 from datetime import datetime
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any, Union, Literal
 from decimal import Decimal
 from enum import Enum
 
@@ -84,6 +84,56 @@ class TournamentInfo(BaseModel):
     sport_name: SportName
     tournament_name: str
     tournament_id: str
+
+
+# New models for the updated endpoints
+class SimpleTournament(BaseModel):
+    """Model for simple tournament information"""
+    tournamentId: str
+    name: str
+    order: int
+
+
+class SportWithTournaments(BaseModel):
+    """Model for sport with nested tournaments"""
+    id: str
+    name: str
+    tournaments: List[SimpleTournament]
+
+
+class Competitor(BaseModel):
+    """Model for team/competitor information"""
+    name: str
+    id: str
+    jerseyIcon: str
+
+
+class TournamentSimple(BaseModel):
+    """Model for simple tournament info in fixtures"""
+    name: str
+    id: str
+
+
+class FixtureInfo(BaseModel):
+    """Model for fixture information"""
+    source: int
+    id: str
+    startTime: str
+    tournament: TournamentSimple
+    sportId: str
+    homeCompetitor: Competitor
+    awayCompetitor: Competitor
+
+
+class FixturesResponseV2(BaseModel):
+    """Model for fixtures response with total count"""
+    totalResults: int
+    fixtures: List[FixtureInfo] = Field(default_factory=list)
+
+
+# Type literals for validation
+LanguageType = Literal["en", "es", "pt_br"]
+FixtureType = Literal["pre_match", "live"]
 
 
 class UserInfo(BaseAPIModel):
