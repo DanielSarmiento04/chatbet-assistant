@@ -352,6 +352,30 @@ class BetResponse(BaseModel):
     possibleWin: float
 
 
+# === Combo Bet Calculation Models ===
+
+class ComboBetInfo(BaseModel):
+    """Individual bet information for combo bet calculation"""
+    betId: str
+    fixtureId: str
+    sportId: str
+    tournamentId: str
+    odd: float
+
+
+class ComboBetCalculationRequest(BaseModel):
+    """Request for combo bet calculation"""
+    betsInfo: List[ComboBetInfo]
+    amount: float
+
+
+class ComboBetCalculationResponse(BaseModel):
+    """Response from combo bet calculation"""
+    profit: float
+    odd: float
+    status: str
+
+
 # === API Response Wrappers ===
 
 class APIResponse(BaseAPIModel):

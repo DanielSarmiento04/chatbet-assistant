@@ -34,7 +34,8 @@ from ..models.api_models import (
     UserValidationResponse, TokenValidationResponse,
     Sport, TournamentInfo, SportWithTournaments, 
     FixtureInfo, FixturesResponseV2, LanguageType, FixtureType,
-    SportFixture, SportFixturesResponse, BetUser, BetDetails, BetInfo
+    SportFixture, SportFixturesResponse, BetUser, BetDetails, BetInfo,
+    ComboBetInfo, ComboBetCalculationRequest, ComboBetCalculationResponse
 )
 
 logger = get_logger(__name__)
@@ -771,6 +772,43 @@ class ChatBetAPIClient:
             
         except Exception as e:
             logger.error(f"Failed to place bet: {str(e)}")
+            return None
+
+    @log_function_call()
+    async def calculate_combo_bet(
+        self, 
+        calculation_request: ComboBetCalculationRequest
+    ) -> Optional[ComboBetCalculationResponse]:
+        """
+        Calculate combo bet profit and odds.
+        
+        Args:
+            calculation_request: Request with bets info and amount
+            
+        Returns:
+            ComboBetCalculationResponse with profit, odd, and status
+        """
+        try:
+            headers = {
+                "accept": "application/json",
+                "Content-Type": "application/json"
+            }
+            
+            response = await self._make_request(
+                "POST",
+                "/combo-bet-calculation",
+                json=calculation_request.model_dump(),
+                headers=headers
+            )
+            
+            calculation_data = response.json()
+            calculation_response = ComboBetCalculationResponse(**calculation_data)
+            
+            logger.info(f"Combo bet calculation completed: profit={calculation_response.profit}, odd={calculation_response.odd}")
+            return calculation_response
+            
+        except Exception as e:
+            logger.error(f"Failed to calculate combo bet: {str(e)}")
             return None
     
     def clear_cache(self):

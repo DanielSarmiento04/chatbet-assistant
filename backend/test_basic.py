@@ -31,7 +31,8 @@ async def test_basic_imports():
             Tournament, MatchFixture, UserValidationResponse, TokenValidationResponse, 
             Sport, TournamentInfo, SportWithTournaments, FixtureInfo, LanguageType, FixtureType,
             SportFixture, SportFixturesResponse, MultiLanguageName, TeamData,
-            BetRequest, BetResponse, BetUser, BetDetails, BetInfo
+            BetRequest, BetResponse, BetUser, BetDetails, BetInfo,
+            ComboBetInfo, ComboBetCalculationRequest, ComboBetCalculationResponse
         )
         print("✅ API models imported successfully")
         
@@ -74,6 +75,25 @@ async def test_basic_imports():
             awayCompetitorId=multilang_name
         )
         print("✅ Sport fixtures models working correctly")
+        
+        # Test combo bet calculation models
+        combo_bet_info = ComboBetInfo(
+            betId="1121441257",
+            fixtureId="27997793",
+            sportId="1",
+            tournamentId="27910131",
+            odd=4.0
+        )
+        combo_bet_request = ComboBetCalculationRequest(
+            betsInfo=[combo_bet_info],
+            amount=5.0
+        )
+        combo_bet_response = ComboBetCalculationResponse(
+            profit=20.0,
+            odd=4.0,
+            status="True"
+        )
+        print("✅ Combo bet calculation models working correctly")
         
         # Test basic configuration
         settings = get_settings()
@@ -124,6 +144,11 @@ async def test_api_client():
         assert hasattr(client, 'get_fixtures'), "get_fixtures method missing"
         assert hasattr(client, 'get_sport_fixtures'), "get_sport_fixtures method missing"
         print("✅ New sports methods are available")
+        
+        # Check that betting methods exist
+        assert hasattr(client, 'place_bet'), "place_bet method missing"
+        assert hasattr(client, 'calculate_combo_bet'), "calculate_combo_bet method missing"
+        print("✅ Betting methods are available")
         
         # Clean up
         await client.close() 
