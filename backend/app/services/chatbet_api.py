@@ -511,7 +511,7 @@ class ChatBetAPIClient:
             return []
 
     @log_function_call()
-    async def get_fixtures_v2(
+    async def get_fixtures(
         self,
         tournament_id: Optional[str] = None,
         fixture_type: FixtureType = "pre_match",
@@ -519,7 +519,7 @@ class ChatBetAPIClient:
         time_zone: str = "UTC"
     ) -> FixturesResponseV2:
         """
-        Get fixtures for tournaments (updated version).
+        Get fixtures for tournaments.
         
         Args:
             tournament_id: The ID of the tournament (optional)
@@ -628,59 +628,6 @@ class ChatBetAPIClient:
             
         except Exception as e:
             logger.error(f"Failed to get tournaments: {str(e)}")
-            return []
-    
-    @log_function_call()
-    async def get_fixtures(
-        self, 
-        tournament_id: Optional[str] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None,
-        force_refresh: bool = False
-    ) -> List[MatchFixture]:
-        """
-        Get match fixtures.
-        
-        Fixtures change throughout the day but not as frequently as odds,
-        so we cache them for 4 hours.
-        """
-        params = {}
-        if tournament_id:
-            params["tournament_id"] = tournament_id
-        if date_from:
-            params["date_from"] = date_from.isoformat()
-        if date_to:
-            params["date_to"] = date_to.isoformat()
-        
-        cache_key = self._get_cache_key("/sports/fixtures", params)
-        
-        # Check cache first
-        if not force_refresh:
-            cached_data = self._get_from_cache(cache_key)
-            if cached_data:
-                return [MatchFixture(**item) for item in cached_data]
-        
-        try:
-            response = await self._make_request("GET", "/sports/fixtures", params=params)
-            data = response.json()
-            
-            # Handle different response formats
-            if isinstance(data, dict) and "data" in data:
-                fixtures_data = data["data"]
-            elif isinstance(data, list):
-                fixtures_data = data
-            else:
-                fixtures_data = []
-            
-            # Cache for 4 hours
-            self._set_cache(cache_key, fixtures_data, settings.cache_ttl_fixtures)
-            
-            fixtures = [MatchFixture(**item) for item in fixtures_data]
-            logger.info(f"Retrieved {len(fixtures)} fixtures")
-            return fixtures
-            
-        except Exception as e:
-            logger.error(f"Failed to get fixtures: {str(e)}")
             return []
     
     @log_function_call()
