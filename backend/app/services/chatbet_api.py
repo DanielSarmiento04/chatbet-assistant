@@ -33,7 +33,8 @@ from ..models.api_models import (
     TournamentsResponse, FixturesResponse, OddsResponse,
     UserValidationResponse, TokenValidationResponse,
     Sport, TournamentInfo, SportWithTournaments, 
-    FixtureInfo, FixturesResponseV2, LanguageType, FixtureType
+    FixtureInfo, FixturesResponseV2, LanguageType, FixtureType,
+    SportFixture, SportFixturesResponse
 )
 
 logger = get_logger(__name__)
@@ -570,6 +571,52 @@ class ChatBetAPIClient:
         except Exception as e:
             logger.error(f"Error getting fixtures: {str(e)}")
             return FixturesResponseV2(totalResults=0, fixtures=[])
+
+    @log_function_call()
+    async def get_sport_fixtures(
+        self,
+        sport_id: str,
+        fixture_type: FixtureType = "pre_match",
+        language: LanguageType = "en",
+        time_zone: str = "UTC"
+    ) -> List[SportFixture]:
+        """
+        Get fixtures for a specific sport with detailed multilingual information.
+        
+        Args:
+            sport_id: The ID of the sport (required)
+            fixture_type: Type of fixtures (pre_match or live)
+            language: Language for fixture names (en, es, pt_br)
+            time_zone: Time zone for fixture times
+            
+        Returns:
+            List of SportFixture objects with detailed multilingual data
+        """
+        try:
+            params = {
+                "sportId": sport_id,
+                "type": fixture_type,
+                "language": language,
+                "time_zone": time_zone
+            }
+            
+            response = await self._make_request(
+                "GET",
+                "/sports/sports-fixtures",
+                params=params
+            )
+            
+            fixtures_data = response.json()
+            
+            # Convert to SportFixture objects
+            fixtures = [SportFixture(**fixture) for fixture in fixtures_data if isinstance(fixture, dict) and "id" in fixture]
+            
+            logger.debug(f"Retrieved {len(fixtures)} sport fixtures for sport {sport_id}")
+            return fixtures
+            
+        except Exception as e:
+            logger.error(f"Error getting sport fixtures for sport {sport_id}: {str(e)}")
+            return []
     
     @log_function_call()
     async def get_user_balance(self) -> Optional[UserBalance]:

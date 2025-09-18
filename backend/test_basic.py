@@ -29,7 +29,8 @@ async def test_basic_imports():
         
         from app.models.api_models import (
             Tournament, MatchFixture, UserValidationResponse, TokenValidationResponse, 
-            Sport, TournamentInfo, SportWithTournaments, FixtureInfo, LanguageType, FixtureType
+            Sport, TournamentInfo, SportWithTournaments, FixtureInfo, LanguageType, FixtureType,
+            SportFixture, SportFixturesResponse, MultiLanguageName, TeamData
         )
         print("✅ API models imported successfully")
         
@@ -53,6 +54,25 @@ async def test_basic_imports():
         valid_languages: List[LanguageType] = ["en", "es", "pt_br"]
         valid_types: List[FixtureType] = ["pre_match", "live"]
         print("✅ Language and fixture type validation working correctly")
+        
+        # Test new sport fixtures models
+        multilang_name = MultiLanguageName(en="Test", es="Prueba", pt_br="Teste")
+        team_data = TeamData(name=multilang_name)
+        sport_fixture = SportFixture(
+            tournament_name=multilang_name,
+            away_team_data=team_data,
+            source=1101,
+            tournament_id="2988",
+            home_team_data=team_data,
+            id="27900311",
+            startTime="09-18 22:00",
+            startTimeIndex="09-18 22:00",
+            homeCompetitorName=multilang_name,
+            homeCompetitorId=multilang_name,
+            awayCompetitorName=multilang_name,
+            awayCompetitorId=multilang_name
+        )
+        print("✅ Sport fixtures models working correctly")
         
         # Test basic configuration
         settings = get_settings()
@@ -100,11 +120,12 @@ async def test_api_client():
         assert hasattr(client, 'get_sports'), "get_sports method missing"
         assert hasattr(client, 'get_sport_tournaments'), "get_sport_tournaments method missing"
         assert hasattr(client, 'get_all_tournaments'), "get_all_tournaments method missing"
-        assert hasattr(client, 'get_fixtures_v2'), "get_fixtures_v2 method missing"
+        assert hasattr(client, 'get_fixtures'), "get_fixtures method missing"
+        assert hasattr(client, 'get_sport_fixtures'), "get_sport_fixtures method missing"
         print("✅ New sports methods are available")
         
         # Clean up
-        await client.close()
+        await client.close() 
         print("✅ API client structure is valid")
         return True
         

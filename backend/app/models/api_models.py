@@ -136,6 +136,41 @@ LanguageType = Literal["en", "es", "pt_br"]
 FixtureType = Literal["pre_match", "live"]
 
 
+# === New Sport Fixtures Models ===
+
+class MultiLanguageName(BaseModel):
+    """Model for multilingual names"""
+    en: str
+    es: str
+    pt_br: str
+
+
+class TeamData(BaseModel):
+    """Model for team data in sport fixtures"""
+    name: MultiLanguageName
+
+
+class SportFixture(BaseModel):
+    """Model for sport fixture information with detailed structure"""
+    tournament_name: MultiLanguageName
+    away_team_data: TeamData
+    source: int
+    tournament_id: str
+    home_team_data: TeamData
+    id: str
+    startTime: str
+    startTimeIndex: str
+    homeCompetitorName: MultiLanguageName
+    homeCompetitorId: MultiLanguageName
+    awayCompetitorName: MultiLanguageName
+    awayCompetitorId: MultiLanguageName
+
+
+class SportFixturesResponse(BaseModel):
+    """Model for sport fixtures response"""
+    fixtures: List[SportFixture] = Field(default_factory=list)
+
+
 class UserInfo(BaseAPIModel):
     """User information from token validation."""
     user_id: str = Field(..., description="Unique user identifier")
