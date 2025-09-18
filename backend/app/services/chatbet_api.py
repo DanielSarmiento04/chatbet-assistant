@@ -34,7 +34,7 @@ from ..models.api_models import (
     UserValidationResponse, TokenValidationResponse,
     Sport, TournamentInfo, SportWithTournaments, 
     FixtureInfo, FixturesResponseV2, LanguageType, FixtureType,
-    SportFixture, SportFixturesResponse
+    SportFixture, SportFixturesResponse, BetUser, BetDetails, BetInfo
 )
 
 logger = get_logger(__name__)
@@ -728,29 +728,45 @@ class ChatBetAPIClient:
             return []
     
     @log_function_call()
-    async def place_bet(self, bet_request: BetRequest) -> Optional[BetResponse]:
+    async def place_bet(
+        self, 
+        bet_request: BetRequest,
+        token: str,
+        accept_language: str = "es",
+        country_code: str = "BR"
+    ) -> Optional[BetResponse]:
         """
-        Place a bet (simulation) with automatic authentication.
+        Place a bet with the ChatBet API using the actual API structure.
         
-        This simulates placing a bet with the ChatBet API. In the real system,
-        this would actually place a bet, but for this assessment we're just
-        simulating the process.
+        Args:
+            bet_request: Bet request with user and bet information
+            token: Authentication token for the user
+            accept_language: Language preference (default: "es")
+            country_code: Country code (default: "BR")
+            
+        Returns:
+            BetResponse with message, betId, and possibleWin
         """
         try:
-            # Ensure we have a valid token
-            token = await self._ensure_authenticated()
+            headers = {
+                "accept": "application/json",
+                "accept-language": accept_language,
+                "country-code": country_code,
+                "token": token,
+                "Content-Type": "application/json"
+            }
             
             response = await self._make_request(
                 "POST",
                 "/place-bet",
                 json=bet_request.model_dump(),
-                headers={"Authorization": f"Bearer {token}"}
+                headers=headers
             )
             
             bet_data = response.json()
             bet_response = BetResponse(**bet_data)
             
-            logger.info(f"Bet placed successfully: {bet_response.bet_id}")
+            logger.info(f"Bet placed successfully: {bet_response.betId}")
             return bet_response
             
         except Exception as e:

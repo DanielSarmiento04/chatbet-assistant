@@ -30,7 +30,8 @@ async def test_basic_imports():
         from app.models.api_models import (
             Tournament, MatchFixture, UserValidationResponse, TokenValidationResponse, 
             Sport, TournamentInfo, SportWithTournaments, FixtureInfo, LanguageType, FixtureType,
-            SportFixture, SportFixturesResponse, MultiLanguageName, TeamData
+            SportFixture, SportFixturesResponse, MultiLanguageName, TeamData,
+            BetRequest, BetResponse, BetUser, BetDetails, BetInfo
         )
         print("✅ API models imported successfully")
         

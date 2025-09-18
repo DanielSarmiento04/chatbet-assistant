@@ -317,36 +317,39 @@ class MatchOdds(BaseAPIModel):
 
 # === Betting Simulation Models ===
 
-class BetRequest(BaseAPIModel):
-    """Request to place a bet."""
-    match_id: str = Field(..., description="Match identifier")
-    market_id: str = Field(..., description="Market identifier")
-    outcome_id: str = Field(..., description="Outcome identifier")
-    stake: Decimal = Field(..., description="Bet stake amount")
-    odds: Decimal = Field(..., description="Odds at time of bet placement")
-    
-    @validator('stake')
-    def validate_stake(cls, v):
-        """Ensure stake is positive."""
-        if v <= 0:
-            raise ValueError("Stake must be positive")
-        return v
-    
-    @validator('odds')
-    def validate_odds(cls, v):
-        """Ensure odds are positive."""
-        if v <= 0:
-            raise ValueError("Odds must be positive")
-        return v
+class BetUser(BaseModel):
+    """User information for bet placement"""
+    userKey: str
+    id: str
 
 
-class BetResponse(BaseAPIModel):
-    """Response from placing a bet."""
-    bet_id: str = Field(..., description="Unique bet identifier")
-    status: str = Field(..., description="Bet status (e.g., 'accepted', 'rejected')")
-    message: Optional[str] = Field(None, description="Status message")
-    potential_payout: Optional[Decimal] = Field(None, description="Potential payout if bet wins")
-    placed_at: datetime = Field(..., description="Bet placement timestamp")
+class BetDetails(BaseModel):
+    """Individual bet details"""
+    betId: str
+    fixtureId: str
+    odd: str
+    sportId: str
+    tournamentId: str
+
+
+class BetInfo(BaseModel):
+    """Bet information containing amount and bet details"""
+    amount: str
+    betId: List[BetDetails]
+    source: str
+
+
+class BetRequest(BaseModel):
+    """Request to place a bet with the actual API structure"""
+    user: BetUser
+    betInfo: BetInfo
+
+
+class BetResponse(BaseModel):
+    """Response from placing a bet with the actual API structure"""
+    message: str
+    betId: str
+    possibleWin: float
 
 
 # === API Response Wrappers ===
