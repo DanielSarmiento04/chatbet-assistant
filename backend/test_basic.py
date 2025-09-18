@@ -26,8 +26,24 @@ async def test_basic_imports():
         from app.models.conversation import ChatRequest, ChatResponse, IntentType
         print("✅ Conversation models imported successfully")
         
-        from app.models.api_models import Tournament, MatchFixture
+        from app.models.api_models import Tournament, MatchFixture, UserValidationResponse, TokenValidationResponse, Sport, TournamentInfo
         print("✅ API models imported successfully")
+        
+        # Test new validation models
+        user_validation = UserValidationResponse(status=True, userId=1)
+        token_validation = TokenValidationResponse(message="Valid token")
+        print("✅ New validation models working correctly")
+        
+        # Test new sports models
+        sport = Sport(
+            alias="Soccer",
+            id="1",
+            name="Football",
+            name_es="Football", 
+            name_en="Football",
+            name_pt_br="Football"
+        )
+        print("✅ Sports models working correctly")
         
         # Test basic configuration
         settings = get_settings()
@@ -55,12 +71,42 @@ async def test_basic_imports():
         print(f"❌ Import test failed: {str(e)}")
         return False
 
+async def test_api_client():
+    """Test that API client can be imported and basic methods exist."""
+    print("\n🧪 Testing API Client...")
+    
+    try:
+        from app.services.chatbet_api import ChatBetAPIClient
+        print("✅ ChatBetAPIClient imported successfully")
+        
+        # Create client instance (won't make actual requests in test)
+        client = ChatBetAPIClient()
+        
+        # Check that new validation methods exist
+        assert hasattr(client, 'validate_user'), "validate_user method missing"
+        assert hasattr(client, 'validate_token_endpoint'), "validate_token_endpoint method missing"
+        print("✅ New validation methods are available")
+        
+        # Check that new sports methods exist
+        assert hasattr(client, 'get_sports'), "get_sports method missing"
+        assert hasattr(client, 'get_sport_tournaments'), "get_sport_tournaments method missing"
+        print("✅ New sports methods are available")
+        
+        # Clean up
+        await client.close()
+        print("✅ API client structure is valid")
+        return True
+        
+    except Exception as e:
+        print(f"❌ API client test failed: {str(e)}")
+        return False
+
 async def test_fastapi_app():
     """Test that FastAPI app can be created."""
     print("\n🧪 Testing FastAPI application...")
     
     try:
-        from app.main import app
+        from app import app
         print("✅ FastAPI app imported successfully")
         
         # Check if app has the expected routes
@@ -86,6 +132,9 @@ async def main():
     # Test imports
     import_success = await test_basic_imports()
     
+    # Test API client
+    api_success = await test_api_client()
+    
     # Test FastAPI app
     app_success = await test_fastapi_app()
     
@@ -93,9 +142,10 @@ async def main():
     print("\n📊 Test Summary:")
     print("=" * 20)
     print(f"Imports: {'✅ PASS' if import_success else '❌ FAIL'}")
+    print(f"API Client: {'✅ PASS' if api_success else '❌ FAIL'}")
     print(f"FastAPI: {'✅ PASS' if app_success else '❌ FAIL'}")
     
-    if import_success and app_success:
+    if import_success and api_success and app_success:
         print("\n🎉 All tests passed! The backend is ready to run.")
         print("\n🚀 To start the server:")
         print("   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000")

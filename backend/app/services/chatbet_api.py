@@ -31,7 +31,8 @@ from ..models.api_models import (
     TokenRequest, TokenResponse, UserInfo, UserBalance,
     Tournament, MatchFixture, MatchOdds, BetRequest, BetResponse,
     TournamentsResponse, FixturesResponse, OddsResponse,
-    UserValidationResponse, TokenValidationResponse
+    UserValidationResponse, TokenValidationResponse,
+    Sport, TournamentInfo
 )
 
 logger = get_logger(__name__)
@@ -404,6 +405,71 @@ class ChatBetAPIClient:
         except Exception as e:
             logger.error(f"Error validating token: {str(e)}")
             return None
+
+    @log_function_call()
+    async def get_sports(self) -> List[Sport]:
+        """
+        Get list of available sports.
+        
+        Returns:
+            List of Sport objects, empty list if error
+        """
+        try:
+            response = await self._make_request(
+                "GET",
+                "/sports"
+            )
+            
+            sports_data = response.json()
+            sports = [Sport(**sport) for sport in sports_data]
+            
+            logger.debug(f"Retrieved {len(sports)} sports")
+            return sports
+            
+        except Exception as e:
+            logger.error(f"Error getting sports: {str(e)}")
+            return []
+
+    @log_function_call()
+    async def get_sport_tournaments(
+        self, 
+        sport_id: str, 
+        language: str = "en", 
+        with_active_fixtures: bool = False
+    ) -> List[TournamentInfo]:
+        """
+        Get tournaments for a specific sport.
+        
+        Args:
+            sport_id: The ID of the sport
+            language: Language for tournament names (en, es, pt_br)
+            with_active_fixtures: Whether to include only tournaments with active fixtures
+            
+        Returns:
+            List of TournamentInfo objects, empty list if error
+        """
+        try:
+            params = {
+                "sport_id": sport_id,
+                "language": language,
+                "with_active_fixtures": str(with_active_fixtures).lower()
+            }
+            
+            response = await self._make_request(
+                "GET",
+                "/sports/tournaments",
+                params=params
+            )
+            
+            tournaments_data = response.json()
+            tournaments = [TournamentInfo(**tournament) for tournament in tournaments_data]
+            
+            logger.debug(f"Retrieved {len(tournaments)} tournaments for sport {sport_id}")
+            return tournaments
+            
+        except Exception as e:
+            logger.error(f"Error getting tournaments for sport {sport_id}: {str(e)}")
+            return []
     
     @log_function_call()
     async def get_user_balance(self) -> Optional[UserBalance]:

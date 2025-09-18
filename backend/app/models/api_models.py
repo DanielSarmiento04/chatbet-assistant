@@ -60,6 +60,32 @@ class TokenValidationResponse(BaseModel):
     message: str
 
 
+class Sport(BaseModel):
+    """Model for sport information"""
+    alias: str
+    profit: Dict[str, Any] = Field(default_factory=dict)
+    id: str
+    name: str
+    name_es: str
+    name_en: str
+    name_pt_br: str
+
+
+class SportName(BaseModel):
+    """Model for sport name translations"""
+    en: str
+    es: str
+    pt_br: str
+
+
+class TournamentInfo(BaseModel):
+    """Model for tournament information"""
+    profit: Dict[str, Any] = Field(default_factory=dict)
+    sport_name: SportName
+    tournament_name: str
+    tournament_id: str
+
+
 class UserInfo(BaseAPIModel):
     """User information from token validation."""
     user_id: str = Field(..., description="Unique user identifier")
