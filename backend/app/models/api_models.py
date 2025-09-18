@@ -39,12 +39,25 @@ class TokenRequest(BaseAPIModel):
     password: str = Field(..., description="User's password")
 
 
-class TokenResponse(BaseAPIModel):
-    """Response model for authentication token."""
-    access_token: str = Field(..., description="JWT access token")
-    token_type: str = Field(default="bearer", description="Token type")
-    expires_in: int = Field(..., description="Token expiration in seconds")
-    user_id: Optional[str] = Field(None, description="User identifier")
+class TokenResponse(BaseModel):
+    """Response model for token generation"""
+    token: str
+    
+    # Backward compatibility with old field name
+    @property
+    def access_token(self) -> str:
+        return self.token
+
+
+class UserValidationResponse(BaseModel):
+    """Response model for user validation"""
+    status: bool
+    userId: int
+
+
+class TokenValidationResponse(BaseModel):
+    """Response model for token validation"""
+    message: str
 
 
 class UserInfo(BaseAPIModel):
