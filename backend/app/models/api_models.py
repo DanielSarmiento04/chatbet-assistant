@@ -180,12 +180,14 @@ class UserInfo(BaseAPIModel):
     created_at: Optional[datetime] = Field(None, description="Account creation timestamp")
 
 
-class UserBalance(BaseAPIModel):
-    """User's account balance information."""
-    user_id: str = Field(..., description="User identifier")
-    balance: Decimal = Field(..., description="Current account balance")
-    currency: str = Field(default="USD", description="Currency code")
-    last_updated: datetime = Field(..., description="Balance last update timestamp")
+class UserBalance(BaseModel):
+    """User's account balance information from the actual API structure."""
+    flag: int
+    money: float
+    playableBalance: float
+    withdrawableBalance: float
+    bonusBalance: float
+    redeemedBonus: float
 
 
 # === Sports Data Models ===

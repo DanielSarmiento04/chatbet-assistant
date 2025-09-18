@@ -620,20 +620,46 @@ class ChatBetAPIClient:
             return []
     
     @log_function_call()
-    async def get_user_balance(self) -> Optional[UserBalance]:
-        """Get user's account balance with automatic authentication."""
+    async def get_user_balance(
+        self, 
+        user_id: str, 
+        user_key: str, 
+        token: str
+    ) -> Optional[UserBalance]:
+        """
+        Get user's account balance using the actual API structure.
+        
+        Args:
+            user_id: The user ID
+            user_key: The user key
+            token: Authentication token
+            
+        Returns:
+            UserBalance with flag, money, playableBalance, withdrawableBalance, bonusBalance, and redeemedBonus
+        """
         try:
-            # Ensure we have a valid token
-            token = await self._ensure_authenticated()
+            params = {
+                "userId": user_id,
+                "userKey": user_key
+            }
+            
+            headers = {
+                "accept": "application/json",
+                "token": token
+            }
             
             response = await self._make_request(
                 "GET",
                 "/auth/get_user_balance",
-                headers={"Authorization": f"Bearer {token}"}
+                params=params,
+                headers=headers
             )
             
             balance_data = response.json()
-            return UserBalance(**balance_data)
+            balance_response = UserBalance(**balance_data)
+            
+            logger.info(f"Retrieved user balance: money={balance_response.money}, playable={balance_response.playableBalance}")
+            return balance_response
             
         except Exception as e:
             logger.error(f"Failed to get user balance: {str(e)}")

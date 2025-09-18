@@ -32,7 +32,8 @@ async def test_basic_imports():
             Sport, TournamentInfo, SportWithTournaments, FixtureInfo, LanguageType, FixtureType,
             SportFixture, SportFixturesResponse, MultiLanguageName, TeamData,
             BetRequest, BetResponse, BetUser, BetDetails, BetInfo,
-            ComboBetInfo, ComboBetCalculationRequest, ComboBetCalculationResponse
+            ComboBetInfo, ComboBetCalculationRequest, ComboBetCalculationResponse,
+            UserBalance
         )
         print("✅ API models imported successfully")
         
@@ -95,6 +96,17 @@ async def test_basic_imports():
         )
         print("✅ Combo bet calculation models working correctly")
         
+        # Test user balance model
+        user_balance = UserBalance(
+            flag=0,
+            money=4321.77,
+            playableBalance=4536.93,
+            withdrawableBalance=4321.77,
+            bonusBalance=0.0,
+            redeemedBonus=101.0
+        )
+        print("✅ User balance model working correctly")
+        
         # Test basic configuration
         settings = get_settings()
         print(f"✅ Settings loaded: environment={settings.environment}")
@@ -148,6 +160,7 @@ async def test_api_client():
         # Check that betting methods exist
         assert hasattr(client, 'place_bet'), "place_bet method missing"
         assert hasattr(client, 'calculate_combo_bet'), "calculate_combo_bet method missing"
+        assert hasattr(client, 'get_user_balance'), "get_user_balance method missing"
         print("✅ Betting methods are available")
         
         # Clean up
