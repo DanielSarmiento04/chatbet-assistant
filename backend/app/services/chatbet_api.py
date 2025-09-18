@@ -30,7 +30,8 @@ from ..core.logging import get_logger, log_function_call
 from ..models.api_models import (
     TokenRequest, TokenResponse, UserInfo, UserBalance,
     Tournament, MatchFixture, MatchOdds, BetRequest, BetResponse,
-    TournamentsResponse, FixturesResponse, OddsResponse
+    TournamentsResponse, FixturesResponse, OddsResponse,
+    UserValidationResponse, TokenValidationResponse
 )
 
 logger = get_logger(__name__)
@@ -159,7 +160,7 @@ class ChatBetAPIClient:
         """Clean up HTTP client."""
         await self.client.aclose()
     
-    def _get_cache_key(self, endpoint: str, params: Dict[str, Any] = None) -> str:
+    def _get_cache_key(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> str:
         """Generate cache key for endpoint and parameters."""
         if params:
             param_str = "&".join(f"{k}={v}" for k, v in sorted(params.items()))
@@ -246,30 +247,27 @@ class ChatBetAPIClient:
             raise
     
     @log_function_call()
-    async def generate_token(self, username: str, password: str) -> TokenResponse:
+    async def generate_token(self) -> TokenResponse:
         """
         Generate authentication token.
         
         This authenticates with the ChatBet API and returns a token
-        that can be used for subsequent requests.
+        that can be used for subsequent requests. No credentials required.
         """
-        request_data = TokenRequest(username=username, password=password)
-        
         try:
             response = await self._make_request(
                 "POST",
                 "/auth/generate_token",
-                json=request_data.model_dump()
+                headers={"accept": "application/json"}
             )
             
             token_data = response.json()
             token_response = TokenResponse(**token_data)
             
             # Store token for future requests
-            self._auth_token = token_response.access_token
-            self._token_expires_at = datetime.now() + timedelta(
-                seconds=token_response.expires_in
-            )
+            self._auth_token = token_response.token
+            # Since the API doesn't provide expiration, set a reasonable default (1 hour)
+            self._token_expires_at = datetime.now() + timedelta(hours=1)
             
             logger.info("Authentication token generated successfully")
             return token_response
@@ -277,6 +275,42 @@ class ChatBetAPIClient:
         except Exception as e:
             logger.error(f"Failed to generate token: {str(e)}")
             raise
+    
+    async def _ensure_authenticated(self) -> str:
+        """
+        Ensure we have a valid authentication token.
+        
+        Generates a new token if we don't have one or if it's expired.
+        Returns the current valid token.
+        """
+        now = datetime.now()
+        
+        # Check if we need a new token
+        if (not self._auth_token or 
+            not self._token_expires_at or 
+            now >= self._token_expires_at - timedelta(minutes=5)):  # Refresh 5 min early
+            
+            logger.info("Generating new authentication token")
+            await self.generate_token()
+        
+        if not self._auth_token:
+            raise AuthenticationError("Failed to obtain authentication token")
+        
+        return self._auth_token
+    
+    @log_function_call()
+    async def test_authentication(self) -> bool:
+        """
+        Test if authentication is working by generating a token.
+        
+        Returns True if successful, False otherwise.
+        """
+        try:
+            await self.generate_token()
+            return self._auth_token is not None
+        except Exception as e:
+            logger.error(f"Authentication test failed: {str(e)}")
+            return False
     
     @log_function_call()
     async def validate_token(self, token: Optional[str] = None) -> Optional[UserInfo]:
@@ -314,20 +348,74 @@ class ChatBetAPIClient:
         except Exception as e:
             logger.error(f"Error validating token: {str(e)}")
             return None
-    
+
     @log_function_call()
-    async def get_user_balance(self, token: Optional[str] = None) -> Optional[UserBalance]:
-        """Get user's account balance."""
-        check_token = token or self._auth_token
-        if not check_token:
-            logger.warning("No token available for balance check")
-            return None
+    async def validate_user(self, user_key: str) -> Optional[UserValidationResponse]:
+        """
+        Validate user by their user key.
         
+        Args:
+            user_key: The user key to validate
+            
+        Returns:
+            UserValidationResponse if successful, None otherwise
+        """
         try:
             response = await self._make_request(
                 "GET",
+                f"/auth/validate_user",
+                params={"userKey": user_key}
+            )
+            
+            validation_data = response.json()
+            validation_response = UserValidationResponse(**validation_data)
+            
+            logger.debug(f"User validation response: status={validation_response.status}, userId={validation_response.userId}")
+            return validation_response
+            
+        except Exception as e:
+            logger.error(f"Error validating user with key {user_key}: {str(e)}")
+            return None
+
+    @log_function_call()
+    async def validate_token_endpoint(self, token: str) -> Optional[TokenValidationResponse]:
+        """
+        Validate token using the dedicated token validation endpoint.
+        
+        Args:
+            token: The token to validate
+            
+        Returns:
+            TokenValidationResponse if successful, None otherwise
+        """
+        try:
+            response = await self._make_request(
+                "GET",
+                f"/auth/validate_token",
+                headers={"token": token}
+            )
+            
+            validation_data = response.json()
+            validation_response = TokenValidationResponse(**validation_data)
+            
+            logger.debug(f"Token validation response: {validation_response.message}")
+            return validation_response
+            
+        except Exception as e:
+            logger.error(f"Error validating token: {str(e)}")
+            return None
+    
+    @log_function_call()
+    async def get_user_balance(self) -> Optional[UserBalance]:
+        """Get user's account balance with automatic authentication."""
+        try:
+            # Ensure we have a valid token
+            token = await self._ensure_authenticated()
+            
+            response = await self._make_request(
+                "GET",
                 "/auth/get_user_balance",
-                headers={"Authorization": f"Bearer {check_token}"}
+                headers={"Authorization": f"Bearer {token}"}
             )
             
             balance_data = response.json()
@@ -480,25 +568,23 @@ class ChatBetAPIClient:
             return []
     
     @log_function_call()
-    async def place_bet(self, bet_request: BetRequest, token: Optional[str] = None) -> Optional[BetResponse]:
+    async def place_bet(self, bet_request: BetRequest) -> Optional[BetResponse]:
         """
-        Place a bet (simulation).
+        Place a bet (simulation) with automatic authentication.
         
         This simulates placing a bet with the ChatBet API. In the real system,
         this would actually place a bet, but for this assessment we're just
         simulating the process.
         """
-        check_token = token or self._auth_token
-        if not check_token:
-            logger.warning("No token available for bet placement")
-            return None
-        
         try:
+            # Ensure we have a valid token
+            token = await self._ensure_authenticated()
+            
             response = await self._make_request(
                 "POST",
                 "/place-bet",
                 json=bet_request.model_dump(),
-                headers={"Authorization": f"Bearer {check_token}"}
+                headers={"Authorization": f"Bearer {token}"}
             )
             
             bet_data = response.json()
