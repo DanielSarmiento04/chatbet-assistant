@@ -1,9 +1,14 @@
+"""
+Legacy LLM service - this will be replaced by the new comprehensive service.
+Keeping this temporarily for backward compatibility.
+"""
+
 from langchain_google_genai import (
     ChatGoogleGenerativeAI,
 )
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-2.0-flash-exp",
     temperature=0,
     max_tokens=None,
     timeout=None,
