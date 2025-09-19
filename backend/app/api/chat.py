@@ -42,14 +42,7 @@ async def send_message(request: ChatRequest) -> ChatResponse:
         )
         
         # Process the message through the conversation manager
-        response = await conversation_manager.process_message(
-            session_id=request.session_id,
-            user_message=request.message,
-            user_context={
-                "user_id": request.user_id,
-                "preferences": request.preferences
-            } if request.preferences else {"user_id": request.user_id}
-        )
+        response = await conversation_manager.process_message(request)
         
         logger.info(
             f"Chat message processed successfully",

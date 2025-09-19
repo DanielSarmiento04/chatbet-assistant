@@ -20,9 +20,8 @@ from datetime import datetime
 import asyncio
 from uuid import uuid4
 
-from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
-from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.schema import Document
 
@@ -49,31 +48,6 @@ class MemoryFullError(ConversationError):
     pass
 
 
-class InMemoryChatMessageHistory(BaseChatMessageHistory):
-    """
-    Simple in-memory chat message history for LangChain.
-    
-    In production, this would be backed by Redis or a database,
-    but for this assessment, in-memory is sufficient and simpler.
-    """
-    
-    def __init__(self):
-        self.messages: List[BaseMessage] = []
-    
-    def add_message(self, message: BaseMessage) -> None:
-        """Add a message to the history."""
-        self.messages.append(message)
-    
-    def clear(self) -> None:
-        """Clear all messages."""
-        self.messages = []
-    
-    @property
-    def messages_list(self) -> List[BaseMessage]:
-        """Get all messages."""
-        return self.messages
-
-
 class ConversationManager:
     """
     Main conversation manager using LangChain.
@@ -91,7 +65,7 @@ class ConversationManager:
         
         # Session storage (in production, use Redis)
         self.sessions: Dict[str, Conversation] = {}
-        self.memories: Dict[str, ConversationBufferWindowMemory] = {}
+        self.memories: Dict[str, InMemoryChatMessageHistory] = {}
         
         # Performance tracking
         self._total_conversations = 0
@@ -130,114 +104,17 @@ class ConversationManager:
             context=context
         )
         
-        # Initialize LangChain memory
-        memory = ConversationBufferWindowMemory(
-            k=settings.max_conversation_history,
-            return_messages=True,
-            memory_key="chat_history"
-        )
+        # Initialize LangChain memory - using new recommended approach
+        history = InMemoryChatMessageHistory()
         
         # Store in session cache
         self.sessions[session_id] = conversation
-        self.memories[session_id] = memory
+        self.memories[session_id] = history
         
         self._total_conversations += 1
         logger.info(f"Started new conversation: {session_id}")
         
         return conversation
-    
-    @log_function_call()
-    async def process_message(
-        self,
-        session_id: str,
-        user_message: str,
-        user_context: Optional[Dict[str, Any]] = None
-    ) -> ChatResponse:
-        """
-        Process user message and generate response.
-        
-        This is the main entry point for conversation processing.
-        It orchestrates intent classification, context management,
-        and response generation in a seamless flow.
-        """
-        start_time = datetime.now()
-        
-        try:
-            # Get or create conversation
-            conversation = await self.start_conversation(session_id=session_id)
-            memory = self.memories[session_id]
-            
-            # Classify user intent first
-            intent_result = await self.llm_service.classify_intent(user_message)
-            logger.debug(f"Classified intent: {intent_result.intent} (confidence: {intent_result.confidence})")
-            
-            # Create user message
-            user_msg = ChatMessage(
-                role=MessageRole.USER,
-                content=user_message,
-                session_id=session_id,
-                detected_intent=intent_result.intent,
-                intent_confidence=intent_result.confidence
-            )
-            
-            # Add to conversation
-            conversation.add_message(user_msg)
-            
-            # Add to LangChain memory
-            memory.chat_memory.add_user_message(user_message)
-            
-            # Generate response based on intent
-            response_content = await self._generate_contextual_response(
-                conversation=conversation,
-                intent_result=intent_result,
-                user_context=user_context
-            )
-            
-            # Create assistant message
-            response_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
-            assistant_msg = ChatMessage(
-                role=MessageRole.ASSISTANT,
-                content=response_content,
-                session_id=session_id,
-                response_time_ms=response_time_ms
-            )
-            
-            # Add to conversation and memory
-            conversation.add_message(assistant_msg)
-            memory.chat_memory.add_ai_message(response_content)
-            
-            # Update performance metrics
-            self._update_performance_metrics(response_time_ms)
-            
-            # Generate suggested actions based on intent
-            suggested_actions = self._generate_suggested_actions(intent_result.intent)
-            
-            return ChatResponse(
-                message=response_content,
-                session_id=session_id,
-                message_id=assistant_msg.id,
-                response_time_ms=response_time_ms,
-                detected_intent=intent_result.intent,
-                intent_confidence=intent_result.confidence,
-                function_calls_made=[],  # Would be populated if function calls were made
-                suggested_actions=suggested_actions
-            )
-            
-        except Exception as e:
-            logger.error(f"Error processing message: {str(e)}")
-            
-            # Return error response
-            error_response_time = int((datetime.now() - start_time).total_seconds() * 1000)
-            return ChatResponse(
-                message="I apologize, but I encountered an issue processing your message. Please try again.",
-                session_id=session_id,
-                message_id=str(uuid4()),
-                response_time_ms=error_response_time,
-                detected_intent=IntentType.UNCLEAR,
-                intent_confidence=0.0,
-                function_calls_made=[],
-                suggested_actions=["Try rephrasing your question", "Ask for help"]
-            )
     
     async def _generate_contextual_response(
         self,
@@ -479,8 +356,7 @@ Just ask me anything about sports betting, and I'll help you make informed decis
     async def initialize(self):
         """Initialize the conversation manager."""
         logger.info("Initializing conversation manager")
-        # Initialize LLM service
-        await self.llm_service.initialize()
+        # LLM service initialization is handled in the service itself
         logger.info("Conversation manager initialized successfully")
     
     async def process_message(self, request: ChatRequest) -> ChatResponse:
@@ -489,37 +365,97 @@ Just ask me anything about sports betting, and I'll help you make informed decis
         
         This is the main entry point for message processing.
         """
+        start_time = datetime.now()
+        
         try:
             # Get or create conversation
             conversation = await self.start_conversation(
                 user_id=request.user_id,
                 session_id=request.session_id
             )
+            history = self.memories[conversation.id]
             
-            # Create chat message
-            user_message = ChatMessage(
+            # Classify user intent first
+            intent_result = await self.llm_service.classify_intent(request.message)
+            logger.debug(f"Classified intent: {intent_result.intent} (confidence: {intent_result.confidence})")
+            
+            # Create user message
+            user_msg = ChatMessage(
                 role=MessageRole.USER,
                 content=request.message,
-                timestamp=datetime.utcnow()
+                session_id=conversation.id,
+                user_id=request.user_id,
+                detected_intent=intent_result.intent,
+                intent_confidence=intent_result.confidence,
+                response_time_ms=None,
+                token_count=None,
+                function_calls=None
             )
             
-            # Process the message
-            response = await self.process_user_message(
-                user_message=user_message,
-                conversation=conversation
+            # Add to conversation
+            conversation.add_message(user_msg)
+            
+            # Add to LangChain memory
+            history.add_user_message(request.message)
+            
+            # Generate response based on intent
+            response_content = await self._generate_contextual_response(
+                conversation=conversation,
+                intent_result=intent_result,
+                user_context={}
             )
             
-            return response
+            # Create assistant message
+            response_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+            # Create assistant message
+            assistant_msg = ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=response_content,
+                session_id=conversation.id,
+                user_id=request.user_id,
+                detected_intent=None,
+                intent_confidence=None,
+                response_time_ms=response_time_ms,
+                token_count=None,
+                function_calls=None
+            )
+            
+            # Add to conversation and memory
+            conversation.add_message(assistant_msg)
+            history.add_ai_message(response_content)
+            
+            # Update performance metrics
+            self._update_performance_metrics(response_time_ms)
+            
+            # Generate suggested actions based on intent
+            suggested_actions = self._generate_suggested_actions(intent_result.intent)
+            
+            return ChatResponse(
+                message=response_content,
+                session_id=conversation.id,
+                message_id=assistant_msg.id,
+                response_time_ms=response_time_ms,
+                token_count=None,  # Could be populated with actual token count
+                detected_intent=intent_result.intent,
+                intent_confidence=intent_result.confidence,
+                function_calls_made=[],  # Would be populated if function calls were made
+                suggested_actions=suggested_actions
+            )
             
         except Exception as e:
             logger.error(f"Error processing message: {str(e)}", exc_info=True)
             # Return error response
+            error_response_time = int((datetime.now() - start_time).total_seconds() * 1000)
             return ChatResponse(
                 message="I apologize, but I encountered an error processing your request. Please try again.",
-                intent_type=IntentType.UNCLEAR.value,
-                confidence=0.0,
-                session_id=request.session_id,
-                metadata={"error": str(e)}
+                session_id=request.session_id or str(uuid4()),
+                message_id=str(uuid4()),
+                response_time_ms=error_response_time,
+                token_count=None,
+                detected_intent=IntentType.UNCLEAR,
+                intent_confidence=0.0,
+                function_calls_made=[],
+                suggested_actions=["Try rephrasing your question", "Ask for help"]
             )
     
     async def process_message_stream(self, request: ChatRequest) -> AsyncGenerator[ChatResponse, None]:
@@ -539,7 +475,13 @@ Just ask me anything about sports betting, and I'll help you make informed decis
             user_message = ChatMessage(
                 role=MessageRole.USER,
                 content=request.message,
-                timestamp=datetime.utcnow()
+                session_id=conversation.id,
+                user_id=request.user_id,
+                detected_intent=None,
+                intent_confidence=None,
+                response_time_ms=None,
+                token_count=None,
+                function_calls=None
             )
             
             # Stream the response
@@ -553,7 +495,13 @@ Just ask me anything about sports betting, and I'll help you make informed decis
             assistant_message = ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=final_message,
-                timestamp=datetime.utcnow()
+                session_id=conversation.id,
+                user_id=request.user_id,
+                detected_intent=None,
+                intent_confidence=None,
+                response_time_ms=None,
+                token_count=None,
+                function_calls=None
             )
             conversation.messages.append(user_message)
             conversation.messages.append(assistant_message)
@@ -562,10 +510,14 @@ Just ask me anything about sports betting, and I'll help you make informed decis
             logger.error(f"Error in streaming response: {str(e)}", exc_info=True)
             yield ChatResponse(
                 message="I apologize, but I encountered an error. Please try again.",
-                intent_type=IntentType.UNCLEAR.value,
-                confidence=0.0,
-                session_id=request.session_id,
-                metadata={"error": str(e)}
+                session_id=request.session_id or str(uuid4()),
+                message_id=str(uuid4()),
+                response_time_ms=0,
+                token_count=None,
+                detected_intent=IntentType.UNCLEAR,
+                intent_confidence=0.0,
+                function_calls_made=[],
+                suggested_actions=[]
             )
     
     async def _stream_response(
@@ -578,10 +530,17 @@ Just ask me anything about sports betting, and I'll help you make informed decis
         # In practice, you'd want to stream from the LLM service
         
         # Process normally first
-        response = await self.process_user_message(user_message, conversation)
+        response_content = await self._generate_contextual_response(
+            conversation=conversation,
+            intent_result=IntentClassificationResult(
+                intent=IntentType.GENERAL_SPORTS_QUERY,
+                confidence=0.8
+            ),
+            user_context={}
+        )
         
         # Split into chunks for streaming effect
-        words = response.message.split()
+        words = response_content.split()
         chunk_size = 3  # Words per chunk
         
         for i in range(0, len(words), chunk_size):
@@ -590,53 +549,18 @@ Just ask me anything about sports betting, and I'll help you make informed decis
             
             yield ChatResponse(
                 message=chunk_text + " ",
-                intent_type=response.intent_type,
-                confidence=response.confidence,
-                session_id=response.session_id,
-                metadata=response.metadata
+                session_id=conversation.id,
+                message_id=str(uuid4()),
+                response_time_ms=100,  # Simulated time
+                token_count=None,
+                detected_intent=IntentType.GENERAL_SPORTS_QUERY,
+                intent_confidence=0.8,
+                function_calls_made=[],
+                suggested_actions=[]
             )
             
             # Small delay for streaming effect
             await asyncio.sleep(0.1)
-    
-    async def get_conversation_history(
-        self,
-        user_id: str,
-        session_id: Optional[str] = None,
-        limit: int = 20,
-        offset: int = 0
-    ) -> List[Dict[str, Any]]:
-        """Get conversation history for a user."""
-        history = []
-        
-        # If session_id is provided, get specific session
-        if session_id and session_id in self.sessions:
-            conversation = self.sessions[session_id]
-            messages = conversation.messages[offset:offset + limit]
-            for msg in messages:
-                history.append({
-                    "role": msg.role.value,
-                    "content": msg.content,
-                    "timestamp": msg.timestamp.isoformat(),
-                    "session_id": session_id
-                })
-        else:
-            # Get all sessions for user (simplified - in practice use database)
-            for sid, conversation in self.sessions.items():
-                if conversation.context.user_id == user_id:
-                    for msg in conversation.messages:
-                        history.append({
-                            "role": msg.role.value,
-                            "content": msg.content,
-                            "timestamp": msg.timestamp.isoformat(),
-                            "session_id": sid
-                        })
-            
-            # Apply pagination
-            history = sorted(history, key=lambda x: x["timestamp"])
-            history = history[offset:offset + limit]
-        
-        return history
     
     async def clear_conversation_history(
         self,
