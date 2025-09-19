@@ -1,1 +1,104 @@
-<p>home works!</p>
+<div class="home-container">
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        Welcome to <span class="brand-name">ChatBet</span>
+      </h1>
+      <p class="hero-subtitle">
+        Your AI-powered sports betting assistant. Get expert insights,
+        real-time odds, and personalized recommendations.
+      </p>
+      <div class="hero-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          class="start-chat-btn"
+          (click)="startChat()">
+          <mat-icon>chat</mat-icon>
+          Start Chatting
+        </button>
+        <button
+          mat-stroked-button
+          color="accent"
+          class="learn-more-btn">
+          <mat-icon>info</mat-icon>
+          Learn More
+        </button>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="sports-grid">
+        <mat-card class="sport-card">
+          <mat-icon>sports_soccer</mat-icon>
+          <span>Football</span>
+        </mat-card>
+        <mat-card class="sport-card">
+          <mat-icon>sports_basketball</mat-icon>
+          <span>Basketball</span>
+        </mat-card>
+        <mat-card class="sport-card">
+          <mat-icon>sports_tennis</mat-icon>
+          <span>Tennis</span>
+        </mat-card>
+        <mat-card class="sport-card">
+          <mat-icon>sports_baseball</mat-icon>
+          <span>Baseball</span>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+
+  <div class="features-section">
+    <h2 class="section-title">Why Choose ChatBet?</h2>
+    <div class="features-grid">
+      <mat-card class="feature-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar color="primary">psychology</mat-icon>
+          <mat-card-title>AI-Powered Insights</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          Get intelligent analysis and predictions powered by advanced AI algorithms
+          trained on comprehensive sports data.
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="feature-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar color="accent">schedule</mat-icon>
+          <mat-card-title>Real-Time Data</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          Access live odds, scores, and betting opportunities updated in real-time
+          across all major sports.
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="feature-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar color="warn">person</mat-icon>
+          <mat-card-title>Personalized Recommendations</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          Receive tailored betting suggestions based on your preferences,
+          history, and risk tolerance.
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <div class="cta-section">
+    <mat-card class="cta-card">
+      <mat-card-content>
+        <h3>Ready to Start Winning?</h3>
+        <p>Join thousands of successful bettors using ChatBet's AI assistance.</p>
+        <button
+          mat-raised-button
+          color="primary"
+          size="large"
+          (click)="startChat()">
+          Get Started Now
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

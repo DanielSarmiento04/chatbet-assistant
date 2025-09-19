@@ -334,9 +334,36 @@ Just ask me anything about sports betting, and I'll help you make informed decis
                 / self._total_conversations
             )
     
-    async def get_conversation_history(self, session_id: str) -> Optional[Conversation]:
+    async def get_conversation_history(
+        self, 
+        session_id: str, 
+        user_id: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> Optional[Conversation]:
         """Get conversation history for a session."""
-        return self.sessions.get(session_id)
+        conversation = self.sessions.get(session_id)
+        if not conversation:
+            return None
+        
+        # Apply pagination to messages if needed
+        if limit > 0 and len(conversation.messages) > offset:
+            # Create a copy of the conversation with paginated messages
+            start_idx = offset
+            end_idx = offset + limit
+            paginated_messages = conversation.messages[start_idx:end_idx]
+            
+            # Create new conversation with paginated messages
+            paginated_conversation = Conversation(
+                id=conversation.id,
+                context=conversation.context,
+                messages=paginated_messages,
+                title=conversation.title,
+                is_active=conversation.is_active
+            )
+            return paginated_conversation
+        
+        return conversation
     
     async def clear_conversation(self, session_id: str) -> bool:
         """Clear conversation history for a session."""
@@ -410,6 +437,10 @@ Just ask me anything about sports betting, and I'll help you make informed decis
                 intent_result=intent_result,
                 user_context={}
             )
+            
+            # Ensure response content is not empty
+            if not response_content or not response_content.strip():
+                response_content = "I apologize, but I'm having trouble generating a response right now. Please try asking your question again."
             
             # Create assistant message
             response_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
