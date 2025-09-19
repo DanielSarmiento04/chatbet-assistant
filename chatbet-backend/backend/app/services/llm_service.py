@@ -15,7 +15,7 @@ Key features:
 
 import json
 import logging
-from typing import List, Dict, Any, Optional, Callable, AsyncGenerator
+from typing import List, Dict, Any, Optional, Callable, AsyncGenerator, Union
 from datetime import datetime
 import asyncio
 
@@ -84,9 +84,6 @@ class ChatBetLLMService:
             # Enable function calling
             convert_system_message_to_human=False
         )
-        
-        # Initialize API client for function calls
-        self._api_client = None
         
         # Performance tracking
         self._total_requests = 0
@@ -332,6 +329,15 @@ Be accurate and confident in your classifications. Consider context and user int
         try:
             result = await self.intent_chain.ainvoke({"message": message})
             
+            # Ensure result is an IntentClassifier instance
+            if not isinstance(result, IntentClassifier):
+                logger.warning(f"Unexpected result type from intent chain: {type(result)}")
+                # Try to create IntentClassifier from dict if possible
+                if isinstance(result, dict):
+                    result = IntentClassifier(**result)
+                else:
+                    raise ValueError(f"Invalid result type: {type(result)}")
+            
             response_time = (datetime.now() - start_time).total_seconds() * 1000
             logger.debug(f"Intent classified in {response_time:.2f}ms: {result.intent}")
             
@@ -359,7 +365,7 @@ Be accurate and confident in your classifications. Consider context and user int
         conversation_history: List[BaseMessage],
         user_context: Optional[Dict[str, Any]] = None,
         stream: bool = False
-    ) -> str:
+    ) -> Union[str, AsyncGenerator[str, None]]:
         """
         Generate conversational response using Gemini.
         
@@ -372,8 +378,8 @@ Be accurate and confident in your classifications. Consider context and user int
             # Build system prompt with context
             system_prompt = self._build_system_prompt(user_context)
             
-            # Prepare messages
-            messages = [SystemMessage(content=system_prompt)]
+            # Prepare messages - use List[BaseMessage] type
+            messages: List[BaseMessage] = [SystemMessage(content=system_prompt)]
             
             # Add conversation history (limited to prevent token overflow)
             recent_history = conversation_history[-settings.max_conversation_history:]
@@ -383,19 +389,29 @@ Be accurate and confident in your classifications. Consider context and user int
             messages.append(HumanMessage(content=user_message))
             
             if stream:
-                return await self._generate_streaming_response(messages)
+                # Return the async generator for streaming
+                return self._generate_streaming_response(messages)
             else:
                 # Generate response with tool calling
                 response = await self.llm_with_tools.ainvoke(messages)
                 
                 # Handle tool calls if present
-                if hasattr(response, 'tool_calls') and response.tool_calls:
+                if hasattr(response, 'tool_calls') and getattr(response, 'tool_calls', None):
                     response = await self._handle_tool_calls(response, messages)
                 
                 response_time = (datetime.now() - start_time).total_seconds() * 1000
-                self._update_performance_metrics(response_time, len(response.content))
                 
-                return response.content
+                # Safely get content
+                content = getattr(response, 'content', '')
+                if isinstance(content, list):
+                    # Join list content into string
+                    content = ' '.join(str(item) for item in content if item)
+                elif not isinstance(content, str):
+                    content = str(content) if content else ''
+                
+                self._update_performance_metrics(response_time, len(content))
+                
+                return content
                 
         except Exception as e:
             logger.error(f"Error generating response: {e}")
@@ -405,8 +421,19 @@ Be accurate and confident in your classifications. Consider context and user int
         """Generate streaming response chunks."""
         try:
             async for chunk in self.llm.astream(messages):
-                if chunk.content:
-                    yield chunk.content
+                content = getattr(chunk, 'content', '')
+                if content:
+                    # Ensure content is a string
+                    if isinstance(content, list):
+                        # Join list content into string
+                        content_str = ' '.join(str(item) for item in content if item)
+                    elif isinstance(content, str):
+                        content_str = content
+                    else:
+                        content_str = str(content)
+                    
+                    if content_str.strip():  # Only yield non-empty content
+                        yield content_str
         except Exception as e:
             logger.error(f"Error in streaming response: {e}")
             yield "I apologize, but I'm having trouble with the streaming response."
@@ -441,9 +468,24 @@ Be accurate and confident in your classifications. Consider context and user int
                 messages.append(HumanMessage(content=tool_message))
                 
                 final_response = await self.llm.ainvoke(messages)
-                return final_response
+                # Ensure we return an AIMessage
+                if isinstance(final_response, AIMessage):
+                    return final_response
+                else:
+                    # Convert to AIMessage if needed
+                    content = getattr(final_response, 'content', '')
+                    if isinstance(content, list):
+                        content = ' '.join(str(item) for item in content if item)
+                    return AIMessage(content=str(content))
             
-            return response
+            # Convert response to AIMessage if needed
+            if isinstance(response, AIMessage):
+                return response
+            else:
+                content = getattr(response, 'content', '')
+                if isinstance(content, list):
+                    content = ' '.join(str(item) for item in content if item)
+                return AIMessage(content=str(content))
             
         except Exception as e:
             logger.error(f"Error handling tool calls: {e}")
@@ -544,8 +586,9 @@ Remember: You're helping users make informed betting decisions, not just providi
     
     async def cleanup(self):
         """Cleanup resources."""
-        if self._api_client:
-            await self._api_client.close()
+        # Note: API client cleanup is handled by the get_api_client() function
+        # No resources to cleanup in LLM service itself
+        pass
 
 
 # Global LLM service instance

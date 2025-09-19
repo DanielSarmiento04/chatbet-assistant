@@ -15,7 +15,7 @@ Why LangChain? It gives us:
 """
 
 import logging
-from typing import Dict, List, Optional, Any, Tuple, AsyncGenerator
+from typing import Dict, List, Optional, Any, Tuple, AsyncGenerator, cast
 from datetime import datetime
 import asyncio
 from uuid import uuid4
@@ -175,9 +175,10 @@ class ConversationManager:
         
         else:
             # General response for unclear or general queries
-            return await self.llm_service.generate_response(
-                user_message.content, conversation_history, enhanced_context
+            result = await self.llm_service.generate_response(
+                user_message.content, conversation_history, enhanced_context, stream=False
             )
+            return cast(str, result)
     
     async def _handle_schedule_query(self, user_message: str, history: List[BaseMessage], context: Dict[str, Any]) -> str:
         """Handle match schedule queries with real-time data."""
@@ -191,14 +192,17 @@ class ConversationManager:
         else:
             context["query_type"] = "general_schedule"
         
-        return await self.llm_service.generate_response(user_message, history, context)
+        # When stream=False, generate_response returns a string
+        result = await self.llm_service.generate_response(user_message, history, context, stream=False)
+        return cast(str, result)
     
     async def _handle_odds_query(self, user_message: str, history: List[BaseMessage], context: Dict[str, Any]) -> str:
         """Handle odds information queries."""
         context["query_type"] = "odds_information"
         context["include_odds_explanation"] = True
         
-        return await self.llm_service.generate_response(user_message, history, context)
+        result = await self.llm_service.generate_response(user_message, history, context, stream=False)
+        return cast(str, result)
     
     async def _handle_betting_recommendation(self, user_message: str, history: List[BaseMessage], context: Dict[str, Any]) -> str:
         """Handle betting recommendation requests."""
@@ -206,14 +210,16 @@ class ConversationManager:
         context["include_risk_warning"] = True
         context["include_reasoning"] = True
         
-        return await self.llm_service.generate_response(user_message, history, context)
+        result = await self.llm_service.generate_response(user_message, history, context, stream=False)
+        return cast(str, result)
     
     async def _handle_team_comparison(self, user_message: str, history: List[BaseMessage], context: Dict[str, Any]) -> str:
         """Handle team comparison queries."""
         context["query_type"] = "team_comparison"
         context["include_stats"] = True
         
-        return await self.llm_service.generate_response(user_message, history, context)
+        result = await self.llm_service.generate_response(user_message, history, context, stream=False)
+        return cast(str, result)
     
     async def _handle_balance_query(self, user_message: str, history: List[BaseMessage], context: Dict[str, Any]) -> str:
         """Handle user balance queries."""
@@ -221,7 +227,8 @@ class ConversationManager:
             return "To check your balance, you'll need to sign in first. Would you like me to help you with that?"
         
         context["query_type"] = "balance_query"
-        return await self.llm_service.generate_response(user_message, history, context)
+        result = await self.llm_service.generate_response(user_message, history, context, stream=False)
+        return cast(str, result)
     
     async def _handle_bet_simulation(self, user_message: str, history: List[BaseMessage], context: Dict[str, Any]) -> str:
         """Handle bet placement simulation."""
@@ -229,14 +236,16 @@ class ConversationManager:
         context["include_calculation"] = True
         context["include_risk_warning"] = True
         
-        return await self.llm_service.generate_response(user_message, history, context)
+        result = await self.llm_service.generate_response(user_message, history, context, stream=False)
+        return cast(str, result)
     
     async def _handle_greeting(self, user_message: str, history: List[BaseMessage], context: Dict[str, Any]) -> str:
         """Handle greetings and conversation starters."""
         context["query_type"] = "greeting"
         context["show_capabilities"] = True
         
-        return await self.llm_service.generate_response(user_message, history, context)
+        result = await self.llm_service.generate_response(user_message, history, context, stream=False)
+        return cast(str, result)
     
     async def _handle_help_request(self, user_message: str, history: List[BaseMessage], context: Dict[str, Any]) -> str:
         """Handle help requests."""
@@ -722,18 +731,26 @@ Just ask me anything about sports betting, and I'll help you make informed decis
             enhanced_context.update(user_context)
         
         # Generate response with streaming callback
-        # Note: For now, we'll use the standard generate_response and implement
-        # streaming at the WebSocket level. A future enhancement would be to 
+        # Note: For now, we'll use the standard generate_response without streaming
+        # and implement streaming at the WebSocket level. A future enhancement would be to 
         # modify the LLM service to accept streaming callbacks directly.
-        response_content = await self.llm_service.generate_response(
+        start_time = datetime.now()
+        response_result = await self.llm_service.generate_response(
             user_message=user_message.content,
             conversation_history=conversation_history,
             user_context=enhanced_context,
-            stream=True
+            stream=False  # Don't use streaming here to get string response
         )
         
+        # Ensure we have a string response (not AsyncGenerator)
+        if isinstance(response_result, str):
+            response_content = response_result
+        else:
+            # Should not happen with stream=False, but handle gracefully
+            response_content = "I apologize, but I encountered an issue generating a response."
+        
         # Create assistant message for conversation history
-        response_time_ms = int((datetime.now() - datetime.now()).total_seconds() * 1000)  # Will be updated by callback
+        response_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
         assistant_msg = ChatMessage(
             role=MessageRole.ASSISTANT,
             content=response_content,

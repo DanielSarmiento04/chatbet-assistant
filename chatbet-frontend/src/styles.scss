@@ -37,14 +37,14 @@ $chatbet-dark-theme: mat.define-theme((
   ),
 ));
 
-// Apply the light theme by default
+// Apply the base theme (includes core, typography, and density)
 html {
   @include mat.all-component-themes($chatbet-theme);
 }
 
-// Apply dark theme when dark-theme class is present
+// Apply only color themes for dark mode to avoid duplication
 html.dark-theme {
-  @include mat.all-component-themes($chatbet-dark-theme);
+  @include mat.all-component-colors($chatbet-dark-theme);
 }
 
 // Custom CSS Variables for consistent theming
