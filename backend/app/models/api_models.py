@@ -298,23 +298,30 @@ class Market(BaseAPIModel):
     total_value: Optional[Decimal] = Field(None, description="Total value for over/under bets")
 
 
-class MatchOdds(BaseAPIModel):
-    """Complete odds information for a match."""
-    match_id: str = Field(..., description="Match identifier")
-    match: Optional[MatchFixture] = Field(None, description="Match fixture details")
-    markets: List[Market] = Field(..., description="Available betting markets")
-    last_updated: datetime = Field(..., description="Odds last update timestamp")
-    
-    def get_market_by_type(self, bet_type: str) -> Optional[Market]:
-        """Get market by bet type."""
-        for market in self.markets:
-            if market.bet_type == bet_type:
-                return market
-        return None
-    
-    def get_main_market(self) -> Optional[Market]:
-        """Get the main 1X2 market if available."""
-        return self.get_market_by_type(BetType.MATCH_WINNER)
+class MatchOdds(BaseModel):
+    """Complete odds information for a match with the actual API structure."""
+    status: str
+    main_market: str
+    result: Optional[Any] = None
+    result_regular_time: Optional[Any] = None
+    score: Optional[Any] = None
+    both_teams_to_score: Optional[Any] = None
+    double_chance: Optional[Any] = None
+    over_under: Optional[Any] = None
+    handicap: Optional[Any] = None
+    half_time_total: Optional[Any] = None
+    half_time_result: Optional[Any] = None
+    half_time_handicap: Optional[Any] = None
+    win: Optional[Any] = None
+    draw_no_bet: Optional[Any] = None
+    goal_first_half: Optional[Any] = None
+    goal_second_half: Optional[Any] = None
+    goal_both_halves: Optional[Any] = None
+    total_corners_home: Optional[Any] = None
+    total_corners_away: Optional[Any] = None
+    last_goal: Optional[Any] = None
+    result_five_entries: Optional[Any] = None
+    result_first_period: Optional[Any] = None
 
 
 # === Betting Simulation Models ===

@@ -707,21 +707,31 @@ class ChatBetAPIClient:
     @log_function_call()
     async def get_odds(
         self, 
-        match_id: Optional[str] = None,
-        tournament_id: Optional[str] = None,
+        sport_id: str,
+        tournament_id: str,
+        fixture_id: str,
+        amount: float,
         force_refresh: bool = False
-    ) -> List[MatchOdds]:
+    ) -> Optional[MatchOdds]:
         """
-        Get betting odds.
+        Get betting odds for a specific match using the actual API structure.
         
-        Odds change frequently, especially for live matches, so we only
-        cache them for 30 seconds to ensure users get recent data.
+        Args:
+            sport_id: The ID of the sport
+            tournament_id: The ID of the tournament
+            fixture_id: The ID of the fixture/match
+            amount: The bet amount for odds calculation
+            force_refresh: Whether to bypass cache
+            
+        Returns:
+            MatchOdds object with all available betting markets
         """
-        params = {}
-        if match_id:
-            params["match_id"] = match_id
-        if tournament_id:
-            params["tournament_id"] = tournament_id
+        params = {
+            "sportId": sport_id,
+            "tournamentId": tournament_id,
+            "fixtureId": fixture_id,
+            "amount": str(amount)
+        }
         
         cache_key = self._get_cache_key("/sports/odds", params)
         
@@ -729,30 +739,28 @@ class ChatBetAPIClient:
         if not force_refresh:
             cached_data = self._get_from_cache(cache_key)
             if cached_data:
-                return [MatchOdds(**item) for item in cached_data]
+                return MatchOdds(**cached_data)
         
         try:
-            response = await self._make_request("GET", "/sports/odds", params=params)
-            data = response.json()
+            response = await self._make_request(
+                "GET", 
+                "/sports/odds", 
+                params=params,
+                headers={"accept": "application/json"}
+            )
             
-            # Handle different response formats
-            if isinstance(data, dict) and "data" in data:
-                odds_data = data["data"]
-            elif isinstance(data, list):
-                odds_data = data
-            else:
-                odds_data = []
+            odds_data = response.json()
             
             # Cache for 30 seconds (odds change frequently)
             self._set_cache(cache_key, odds_data, settings.cache_ttl_odds)
             
-            odds = [MatchOdds(**item) for item in odds_data]
-            logger.info(f"Retrieved odds for {len(odds)} matches")
+            odds = MatchOdds(**odds_data)
+            logger.info(f"Retrieved odds for fixture {fixture_id}: status={odds.status}, main_market={odds.main_market}")
             return odds
             
         except Exception as e:
-            logger.error(f"Failed to get odds: {str(e)}")
-            return []
+            logger.error(f"Failed to get odds for fixture {fixture_id}: {str(e)}")
+            return None
     
     @log_function_call()
     async def place_bet(

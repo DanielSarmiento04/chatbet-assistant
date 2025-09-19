@@ -33,7 +33,7 @@ async def test_basic_imports():
             SportFixture, SportFixturesResponse, MultiLanguageName, TeamData,
             BetRequest, BetResponse, BetUser, BetDetails, BetInfo,
             ComboBetInfo, ComboBetCalculationRequest, ComboBetCalculationResponse,
-            UserBalance
+            UserBalance, MatchOdds
         )
         print("✅ API models imported successfully")
         
@@ -107,6 +107,33 @@ async def test_basic_imports():
         )
         print("✅ User balance model working correctly")
         
+        # Test match odds model
+        match_odds = MatchOdds(
+            status="Inactive",
+            main_market="result",
+            result=None,
+            result_regular_time=None,
+            score=None,
+            both_teams_to_score=None,
+            double_chance=None,
+            over_under=None,
+            handicap=None,
+            half_time_total=None,
+            half_time_result=None,
+            half_time_handicap=None,
+            win=None,
+            draw_no_bet=None,
+            goal_first_half=None,
+            goal_second_half=None,
+            goal_both_halves=None,
+            total_corners_home=None,
+            total_corners_away=None,
+            last_goal=None,
+            result_five_entries=None,
+            result_first_period=None
+        )
+        print("✅ Match odds model working correctly")
+        
         # Test basic configuration
         settings = get_settings()
         print(f"✅ Settings loaded: environment={settings.environment}")
@@ -161,6 +188,7 @@ async def test_api_client():
         assert hasattr(client, 'place_bet'), "place_bet method missing"
         assert hasattr(client, 'calculate_combo_bet'), "calculate_combo_bet method missing"
         assert hasattr(client, 'get_user_balance'), "get_user_balance method missing"
+        assert hasattr(client, 'get_odds'), "get_odds method missing"
         print("✅ Betting methods are available")
         
         # Clean up
