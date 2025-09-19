@@ -1,4 +1,444 @@
-/* You can add global styles to this file, and also import other style files */
+/**
+ * ChatBet Angular Material Theme Configuration
+ * Sports betting optimized design system
+ */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+@use '@angular/material' as mat;
+
+// Include the common styles for Angular Material. We include this here so that you only
+// have to load a single css file for Angular Material in your app.
+@include mat.core();
+
+// Custom color palettes
+$chatbet-primary-palette: mat.define-palette((
+  50: #e8f5e8,
+  100: #c5e6c5,
+  200: #9fd6a0,
+  300: #79c579,
+  400: #5cb85c,
+  500: #28a745,  // Main green
+  600: #259b3e,
+  700: #208d35,
+  800: #1b7f2d,
+  900: #146b1f,
+  A100: #c5e6c5,
+  A200: #9fd6a0,
+  A400: #5cb85c,
+  A700: #208d35,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgba(black, 0.87),
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: rgba(black, 0.87),
+    A200: rgba(black, 0.87),
+    A400: rgba(black, 0.87),
+    A700: white,
+  )
+));
+
+$chatbet-accent-palette: mat.define-palette((
+  50: #fff3e0,
+  100: #ffe1b3,
+  200: #ffcd80,
+  300: #ffb84d,
+  400: #ffa926,
+  500: #ff9800,  // Main orange
+  600: #ff8f00,
+  700: #ff8400,
+  800: #ff7a00,
+  900: #ff6900,
+  A100: #ffe1b3,
+  A200: #ffcd80,
+  A400: #ffa926,
+  A700: #ff8400,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgba(black, 0.87),
+    500: rgba(black, 0.87),
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: rgba(black, 0.87),
+    A200: rgba(black, 0.87),
+    A400: rgba(black, 0.87),
+    A700: white,
+  )
+));
+
+$chatbet-warn-palette: mat.define-palette((
+  50: #ffebee,
+  100: #ffcdd2,
+  200: #ef9a9a,
+  300: #e57373,
+  400: #ef5350,
+  500: #f44336,  // Main red
+  600: #e53935,
+  700: #d32f2f,
+  800: #c62828,
+  900: #b71c1c,
+  A100: #ff8a80,
+  A200: #ff5252,
+  A400: #ff1744,
+  A700: #d50000,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgba(black, 0.87),
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: rgba(black, 0.87),
+    A200: white,
+    A400: white,
+    A700: white,
+  )
+));
+
+// Typography configuration
+$chatbet-typography: mat.define-typography-config(
+  $font-family: '"Inter", "Roboto", "Helvetica Neue", sans-serif',
+  $headline-1: mat.define-typography-level(112px, 112px, 300, $letter-spacing: -0.05em),
+  $headline-2: mat.define-typography-level(56px, 56px, 400, $letter-spacing: -0.02em),
+  $headline-3: mat.define-typography-level(45px, 48px, 400, $letter-spacing: -0.005em),
+  $headline-4: mat.define-typography-level(34px, 40px, 400),
+  $headline-5: mat.define-typography-level(24px, 32px, 500),
+  $headline-6: mat.define-typography-level(20px, 32px, 600),
+  $subtitle-1: mat.define-typography-level(16px, 28px, 500),
+  $subtitle-2: mat.define-typography-level(14px, 22px, 600),
+  $body-1: mat.define-typography-level(16px, 24px, 400),
+  $body-2: mat.define-typography-level(14px, 20px, 400),
+  $caption: mat.define-typography-level(12px, 20px, 400),
+  $button: mat.define-typography-level(14px, 36px, 600),
+  $overline: mat.define-typography-level(10px, 32px, 400),
+);
+
+// Light theme
+$chatbet-light-theme: mat.define-light-theme((
+  color: (
+    primary: $chatbet-primary-palette,
+    accent: $chatbet-accent-palette,
+    warn: $chatbet-warn-palette,
+  ),
+  typography: $chatbet-typography,
+  density: 0,
+));
+
+// Dark theme
+$chatbet-dark-theme: mat.define-dark-theme((
+  color: (
+    primary: $chatbet-primary-palette,
+    accent: $chatbet-accent-palette,
+    warn: $chatbet-warn-palette,
+  ),
+  typography: $chatbet-typography,
+  density: 0,
+));
+
+// Include theme styles for core and each component used in your app.
+@include mat.all-component-themes($chatbet-light-theme);
+
+// Dark theme class
+.dark-theme {
+  @include mat.all-component-colors($chatbet-dark-theme);
+}
+
+// Custom CSS Variables for consistent theming
+:root {
+  // Light theme variables
+  --chatbet-primary: #28a745;
+  --chatbet-primary-light: #5cb85c;
+  --chatbet-primary-dark: #1b7f2d;
+  --chatbet-accent: #ff9800;
+  --chatbet-accent-light: #ffa926;
+  --chatbet-accent-dark: #ff8400;
+  --chatbet-warn: #f44336;
+  --chatbet-warn-light: #ef5350;
+  --chatbet-warn-dark: #d32f2f;
+
+  // Background colors
+  --chatbet-bg-primary: #ffffff;
+  --chatbet-bg-secondary: #f8f9fa;
+  --chatbet-bg-tertiary: #e9ecef;
+  --chatbet-bg-card: #ffffff;
+  --chatbet-bg-app-bar: #ffffff;
+
+  // Text colors
+  --chatbet-text-primary: rgba(0, 0, 0, 0.87);
+  --chatbet-text-secondary: rgba(0, 0, 0, 0.6);
+  --chatbet-text-disabled: rgba(0, 0, 0, 0.38);
+  --chatbet-text-hint: rgba(0, 0, 0, 0.38);
+
+  // Border colors
+  --chatbet-border-light: rgba(0, 0, 0, 0.12);
+  --chatbet-border-medium: rgba(0, 0, 0, 0.24);
+  --chatbet-border-dark: rgba(0, 0, 0, 0.38);
+
+  // Chat specific colors
+  --chatbet-message-user-bg: #28a745;
+  --chatbet-message-user-text: #ffffff;
+  --chatbet-message-bot-bg: #f8f9fa;
+  --chatbet-message-bot-text: rgba(0, 0, 0, 0.87);
+  --chatbet-message-error-bg: #f8d7da;
+  --chatbet-message-error-text: #721c24;
+
+  // Odds colors
+  --chatbet-odds-positive: #28a745;
+  --chatbet-odds-negative: #dc3545;
+  --chatbet-odds-neutral: #6c757d;
+
+  // Sports betting colors
+  --chatbet-win: #28a745;
+  --chatbet-loss: #dc3545;
+  --chatbet-draw: #ffc107;
+
+  // Animation timings
+  --chatbet-animation-fast: 150ms;
+  --chatbet-animation-medium: 300ms;
+  --chatbet-animation-slow: 500ms;
+
+  // Spacing
+  --chatbet-spacing-xs: 4px;
+  --chatbet-spacing-sm: 8px;
+  --chatbet-spacing-md: 16px;
+  --chatbet-spacing-lg: 24px;
+  --chatbet-spacing-xl: 32px;
+  --chatbet-spacing-xxl: 48px;
+
+  // Border radius
+  --chatbet-border-radius-sm: 4px;
+  --chatbet-border-radius-md: 8px;
+  --chatbet-border-radius-lg: 12px;
+  --chatbet-border-radius-xl: 16px;
+  --chatbet-border-radius-full: 50%;
+
+  // Shadows
+  --chatbet-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --chatbet-shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  --chatbet-shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  --chatbet-shadow-xl: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+}
+
+// Dark theme variables
+.dark-theme {
+  --chatbet-bg-primary: #121212;
+  --chatbet-bg-secondary: #1e1e1e;
+  --chatbet-bg-tertiary: #2d2d2d;
+  --chatbet-bg-card: #1e1e1e;
+  --chatbet-bg-app-bar: #1e1e1e;
+
+  --chatbet-text-primary: rgba(255, 255, 255, 0.87);
+  --chatbet-text-secondary: rgba(255, 255, 255, 0.6);
+  --chatbet-text-disabled: rgba(255, 255, 255, 0.38);
+  --chatbet-text-hint: rgba(255, 255, 255, 0.38);
+
+  --chatbet-border-light: rgba(255, 255, 255, 0.12);
+  --chatbet-border-medium: rgba(255, 255, 255, 0.24);
+  --chatbet-border-dark: rgba(255, 255, 255, 0.38);
+
+  --chatbet-message-user-bg: #28a745;
+  --chatbet-message-user-text: #ffffff;
+  --chatbet-message-bot-bg: #2d2d2d;
+  --chatbet-message-bot-text: rgba(255, 255, 255, 0.87);
+  --chatbet-message-error-bg: #f5c6cb;
+  --chatbet-message-error-text: #721c24;
+}
+
+// Global styles
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Inter, Roboto, "Helvetica Neue", sans-serif;
+  background-color: var(--chatbet-bg-primary);
+  color: var(--chatbet-text-primary);
+}
+
+// Utility classes
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.flex { display: flex; }
+.flex-column { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-nowrap { flex-wrap: nowrap; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+.justify-start { justify-content: flex-start; }
+.justify-end { justify-content: flex-end; }
+.align-center { align-items: center; }
+.align-start { align-items: flex-start; }
+.align-end { align-items: flex-end; }
+.align-stretch { align-items: stretch; }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.m-0 { margin: 0; }
+.p-0 { padding: 0; }
+
+// Spacing utilities
+@for $i from 1 through 8 {
+  .m-#{$i} { margin: #{$i * 4}px; }
+  .mt-#{$i} { margin-top: #{$i * 4}px; }
+  .mr-#{$i} { margin-right: #{$i * 4}px; }
+  .mb-#{$i} { margin-bottom: #{$i * 4}px; }
+  .ml-#{$i} { margin-left: #{$i * 4}px; }
+  .mx-#{$i} { margin-left: #{$i * 4}px; margin-right: #{$i * 4}px; }
+  .my-#{$i} { margin-top: #{$i * 4}px; margin-bottom: #{$i * 4}px; }
+
+  .p-#{$i} { padding: #{$i * 4}px; }
+  .pt-#{$i} { padding-top: #{$i * 4}px; }
+  .pr-#{$i} { padding-right: #{$i * 4}px; }
+  .pb-#{$i} { padding-bottom: #{$i * 4}px; }
+  .pl-#{$i} { padding-left: #{$i * 4}px; }
+  .px-#{$i} { padding-left: #{$i * 4}px; padding-right: #{$i * 4}px; }
+  .py-#{$i} { padding-top: #{$i * 4}px; padding-bottom: #{$i * 4}px; }
+}
+
+// Component-specific styles
+.chatbet-card {
+  background: var(--chatbet-bg-card);
+  border-radius: var(--chatbet-border-radius-lg);
+  box-shadow: var(--chatbet-shadow-sm);
+  padding: var(--chatbet-spacing-md);
+  border: 1px solid var(--chatbet-border-light);
+  transition: box-shadow var(--chatbet-animation-fast) ease;
+
+  &:hover {
+    box-shadow: var(--chatbet-shadow-md);
+  }
+}
+
+.chatbet-button-primary {
+  background-color: var(--chatbet-primary);
+  color: white;
+  border: none;
+  border-radius: var(--chatbet-border-radius-md);
+  padding: var(--chatbet-spacing-sm) var(--chatbet-spacing-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--chatbet-animation-fast) ease;
+
+  &:hover {
+    background-color: var(--chatbet-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--chatbet-shadow-md);
+  }
+
+  &:disabled {
+    background-color: var(--chatbet-text-disabled);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.chatbet-button-secondary {
+  background-color: transparent;
+  color: var(--chatbet-primary);
+  border: 2px solid var(--chatbet-primary);
+  border-radius: var(--chatbet-border-radius-md);
+  padding: var(--chatbet-spacing-sm) var(--chatbet-spacing-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--chatbet-animation-fast) ease;
+
+  &:hover {
+    background-color: var(--chatbet-primary);
+    color: white;
+  }
+
+  &:disabled {
+    border-color: var(--chatbet-text-disabled);
+    color: var(--chatbet-text-disabled);
+    cursor: not-allowed;
+  }
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--chatbet-bg-secondary);
+  border-radius: var(--chatbet-border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--chatbet-border-medium);
+  border-radius: var(--chatbet-border-radius-sm);
+
+  &:hover {
+    background: var(--chatbet-border-dark);
+  }
+}
+
+// Animation classes
+.fade-in {
+  animation: fadeIn var(--chatbet-animation-medium) ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp var(--chatbet-animation-medium) ease-out;
+}
+
+.bounce-in {
+  animation: bounceIn var(--chatbet-animation-slow) ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+// Responsive breakpoints
+@media (max-width: 599px) {
+  .hide-mobile { display: none !important; }
+}
+
+@media (min-width: 600px) and (max-width: 1023px) {
+  .hide-tablet { display: none !important; }
+}
+
+@media (min-width: 1024px) {
+  .hide-desktop { display: none !important; }
+}
+
+@media (max-width: 1023px) {
+  .hide-mobile-tablet { display: none !important; }
+}

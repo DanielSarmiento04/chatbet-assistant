@@ -679,7 +679,20 @@ class ChatBetAPIClient:
         if not force_refresh:
             cached_data = self._get_from_cache(cache_key)
             if cached_data:
-                return [Tournament(**item) for item in cached_data]
+                # Convert cached TournamentInfo format to Tournament format
+                tournaments = []
+                for item in cached_data:
+                    tournament_data = {
+                        "id": item.get("tournament_id", ""),
+                        "name": item.get("tournament_name", ""),
+                        "country": None,
+                        "category": None,
+                        "season": None,
+                        "start_date": None,
+                        "end_date": None
+                    }
+                    tournaments.append(Tournament(**tournament_data))
+                return tournaments
         
         try:
             response = await self._make_request("GET", "/sports/tournaments")
@@ -696,7 +709,20 @@ class ChatBetAPIClient:
             # Cache for 24 hours
             self._set_cache(cache_key, tournaments_data, settings.cache_ttl_tournaments)
             
-            tournaments = [Tournament(**item) for item in tournaments_data]
+            # Convert TournamentInfo format to Tournament format
+            tournaments = []
+            for item in tournaments_data:
+                # Map TournamentInfo fields to Tournament fields
+                tournament_data = {
+                    "id": item.get("tournament_id", ""),
+                    "name": item.get("tournament_name", ""),
+                    "country": None,  # Not available in TournamentInfo
+                    "category": None,  # Not available in TournamentInfo
+                    "season": None,   # Not available in TournamentInfo
+                    "start_date": None,  # Not available in TournamentInfo
+                    "end_date": None     # Not available in TournamentInfo
+                }
+                tournaments.append(Tournament(**tournament_data))
             logger.info(f"Retrieved {len(tournaments)} tournaments")
             return tournaments
             

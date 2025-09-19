@@ -1,0 +1,431 @@
+.message-bubble {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  margin-bottom: var(--chatbet-spacing-md);
+  animation: slideUp var(--chatbet-animation-medium) ease-out;
+  position: relative;
+
+  &.user-message {
+    align-self: flex-end;
+    margin-left: auto;
+
+    .message-content {
+      background: var(--chatbet-message-user-bg);
+      color: var(--chatbet-message-user-text);
+      border-radius: var(--chatbet-border-radius-lg) var(--chatbet-border-radius-lg) var(--chatbet-border-radius-sm) var(--chatbet-border-radius-lg);
+    }
+
+    .message-header {
+      flex-direction: row-reverse;
+      text-align: right;
+
+      .message-meta {
+        align-items: flex-end;
+      }
+
+      .message-actions {
+        margin-right: var(--chatbet-spacing-sm);
+        margin-left: 0;
+      }
+    }
+  }
+
+  &.assistant-message {
+    align-self: flex-start;
+    margin-right: auto;
+
+    .message-content {
+      background: var(--chatbet-message-bot-bg);
+      color: var(--chatbet-message-bot-text);
+      border-radius: var(--chatbet-border-radius-lg) var(--chatbet-border-radius-lg) var(--chatbet-border-radius-lg) var(--chatbet-border-radius-sm);
+    }
+  }
+
+  &.system-message {
+    align-self: center;
+    max-width: 90%;
+
+    .message-content {
+      background: var(--chatbet-bg-tertiary);
+      color: var(--chatbet-text-secondary);
+      border-radius: var(--chatbet-border-radius-md);
+      text-align: center;
+      font-style: italic;
+    }
+  }
+
+  &.error-message {
+    .message-content {
+      background: var(--chatbet-message-error-bg);
+      color: var(--chatbet-message-error-text);
+      border: 1px solid var(--chatbet-warn);
+    }
+  }
+
+  &.loading-message {
+    .message-content {
+      background: var(--chatbet-bg-tertiary);
+      color: var(--chatbet-text-secondary);
+    }
+  }
+
+  &.latest-message {
+    animation: bounceIn var(--chatbet-animation-slow) ease-out;
+  }
+
+  .message-header {
+    display: flex;
+    align-items: center;
+    gap: var(--chatbet-spacing-sm);
+    margin-bottom: var(--chatbet-spacing-xs);
+    padding: 0 var(--chatbet-spacing-xs);
+
+    .message-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--chatbet-border-radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      &.user-avatar {
+        background: var(--chatbet-primary);
+        color: white;
+      }
+
+      &.bot-avatar {
+        background: var(--chatbet-accent);
+        color: white;
+      }
+
+      mat-icon {
+        font-size: 1.1rem;
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+    }
+
+    .message-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      flex: 1;
+      min-width: 0;
+
+      .message-sender {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--chatbet-text-primary);
+      }
+
+      .message-timestamp {
+        font-size: 0.75rem;
+        color: var(--chatbet-text-secondary);
+        margin-top: 2px;
+      }
+
+      .message-type-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+        color: var(--chatbet-accent);
+        margin-top: 2px;
+      }
+    }
+
+    .message-actions {
+      display: flex;
+      gap: var(--chatbet-spacing-xs);
+      opacity: 0;
+      transition: opacity var(--chatbet-animation-fast) ease;
+      margin-left: var(--chatbet-spacing-sm);
+
+      .action-button {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        line-height: 28px;
+        color: var(--chatbet-text-secondary);
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.04);
+          color: var(--chatbet-primary);
+        }
+
+        mat-icon {
+          font-size: 0.9rem;
+          width: 0.9rem;
+          height: 0.9rem;
+        }
+      }
+    }
+  }
+
+  &:hover .message-actions {
+    opacity: 1;
+  }
+
+  .message-content {
+    padding: var(--chatbet-spacing-md);
+    box-shadow: var(--chatbet-shadow-sm);
+    transition: all var(--chatbet-animation-fast) ease;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    position: relative;
+
+    &:hover {
+      box-shadow: var(--chatbet-shadow-md);
+    }
+
+    .loading-content {
+      display: flex;
+      align-items: center;
+      gap: var(--chatbet-spacing-sm);
+      padding: var(--chatbet-spacing-sm) 0;
+
+      .loading-dots {
+        display: flex;
+        gap: 4px;
+
+        span {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: var(--chatbet-primary);
+          animation: typingDot 1.4s infinite ease-in-out both;
+
+          &:nth-child(1) { animation-delay: -0.32s; }
+          &:nth-child(2) { animation-delay: -0.16s; }
+          &:nth-child(3) { animation-delay: 0s; }
+        }
+      }
+
+      .loading-text {
+        font-size: 0.875rem;
+        font-style: italic;
+        color: var(--chatbet-text-secondary);
+      }
+    }
+
+    .text-content {
+      line-height: 1.5;
+      white-space: pre-wrap;
+
+      // Style links
+      a {
+        color: var(--chatbet-primary);
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      // Style code blocks
+      code {
+        background: rgba(0, 0, 0, 0.04);
+        padding: 2px 4px;
+        border-radius: var(--chatbet-border-radius-sm);
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.9em;
+      }
+
+      pre {
+        background: rgba(0, 0, 0, 0.04);
+        padding: var(--chatbet-spacing-sm);
+        border-radius: var(--chatbet-border-radius-sm);
+        overflow-x: auto;
+        margin: var(--chatbet-spacing-xs) 0;
+
+        code {
+          background: none;
+          padding: 0;
+        }
+      }
+    }
+
+    // Specialized content types
+    .match-card-content,
+    .odds-table-content,
+    .recommendation-content,
+    .tournament-info-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--chatbet-spacing-sm);
+
+      .content-icon {
+        align-self: flex-start;
+        color: var(--chatbet-primary);
+        margin-bottom: var(--chatbet-spacing-xs);
+      }
+
+      .content-text {
+        line-height: 1.5;
+      }
+    }
+
+    .recommendation-content {
+      .content-icon {
+        color: var(--chatbet-accent);
+      }
+    }
+
+    .tournament-info-content {
+      .content-icon {
+        color: #ffc107; // Gold color for tournaments
+      }
+    }
+
+    .message-metadata {
+      margin-top: var(--chatbet-spacing-md);
+      padding-top: var(--chatbet-spacing-sm);
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+      mat-chip-set {
+        gap: var(--chatbet-spacing-xs);
+      }
+
+      mat-chip {
+        font-size: 0.75rem;
+        height: 24px;
+        opacity: 0.8;
+
+        mat-icon {
+          font-size: 0.8rem;
+          width: 0.8rem;
+          height: 0.8rem;
+        }
+      }
+    }
+
+    .error-details {
+      display: flex;
+      align-items: center;
+      gap: var(--chatbet-spacing-xs);
+      margin-top: var(--chatbet-spacing-sm);
+      padding: var(--chatbet-spacing-xs) var(--chatbet-spacing-sm);
+      background: rgba(244, 67, 54, 0.1);
+      border-radius: var(--chatbet-border-radius-sm);
+      border: 1px solid rgba(244, 67, 54, 0.2);
+
+      .error-icon {
+        color: var(--chatbet-warn);
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+      }
+
+      .error-text {
+        font-size: 0.875rem;
+        color: var(--chatbet-warn);
+      }
+    }
+
+    .performance-metrics {
+      display: flex;
+      gap: var(--chatbet-spacing-md);
+      margin-top: var(--chatbet-spacing-sm);
+      padding-top: var(--chatbet-spacing-xs);
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      font-size: 0.75rem;
+      color: var(--chatbet-text-hint);
+
+      .metric {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        mat-icon {
+          font-size: 0.8rem;
+          width: 0.8rem;
+          height: 0.8rem;
+        }
+      }
+    }
+  }
+}
+
+// Animation keyframes
+@keyframes typingDot {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 599px) {
+  .message-bubble {
+    max-width: 95%;
+
+    .message-header {
+      .message-avatar {
+        width: 28px;
+        height: 28px;
+
+        mat-icon {
+          font-size: 1rem;
+          width: 1rem;
+          height: 1rem;
+        }
+      }
+
+      .message-meta {
+        .message-sender {
+          font-size: 0.8rem;
+        }
+
+        .message-timestamp {
+          font-size: 0.7rem;
+        }
+      }
+    }
+
+    .message-content {
+      padding: var(--chatbet-spacing-sm);
+
+      .text-content {
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// Dark theme adjustments
+.dark-theme {
+  .message-bubble {
+    .message-content {
+      .text-content {
+        code {
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
+        }
+
+        pre {
+          background: rgba(255, 255, 255, 0.05);
+
+          code {
+            background: none;
+          }
+        }
+      }
+
+      .message-metadata {
+        border-top-color: rgba(255, 255, 255, 0.12);
+      }
+
+      .performance-metrics {
+        border-top-color: rgba(255, 255, 255, 0.12);
+      }
+    }
+
+    .message-header .message-actions .action-button:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+}

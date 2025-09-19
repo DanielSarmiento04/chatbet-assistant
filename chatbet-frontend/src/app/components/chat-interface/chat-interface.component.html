@@ -1,1 +1,117 @@
-<p>chat-interface works!</p>
+<div class="chat-interface">
+  <!-- Chat Header -->
+  <mat-toolbar class="chat-header" color="primary">
+    <mat-icon>chat</mat-icon>
+    <span class="chat-title">ChatBet Assistant</span>
+    <span class="spacer"></span>
+
+    <!-- Connection Status -->
+    <div class="connection-status" [class.connected]="isConnected()" [class.disconnected]="!isConnected()">
+      <mat-icon>{{ isConnected() ? 'wifi' : 'wifi_off' }}</mat-icon>
+      <span>{{ isConnected() ? 'Connected' : 'Disconnected' }}</span>
+    </div>
+
+    <!-- Chat Actions -->
+    <button mat-icon-button (click)="clearChat()" [disabled]="!hasMessages()" matTooltip="Clear chat">
+      <mat-icon>clear_all</mat-icon>
+    </button>
+
+    <button mat-icon-button (click)="toggleChatHistory()" matTooltip="Chat history">
+      <mat-icon>history</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <!-- Loading Indicator -->
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" class="loading-bar"></mat-progress-bar>
+  }
+
+  <!-- Chat Messages Container -->
+  <div class="chat-messages-container" #messagesContainer (scroll)="onScroll()">
+    <div class="chat-messages">
+      @if (messages().length === 0) {
+        <!-- Welcome Message -->
+        <div class="welcome-message">
+          <mat-icon class="welcome-icon">sports_soccer</mat-icon>
+          <h3>Welcome to ChatBet!</h3>
+          <p>Ask me about sports betting, get odds, place bets, or just chat about your favorite teams.</p>
+
+          <div class="quick-actions">
+            <button mat-stroked-button (click)="sendQuickMessage('Show me today football matches')">
+              <mat-icon>sports_football</mat-icon>
+              Today's Matches
+            </button>
+            <button mat-stroked-button (click)="sendQuickMessage('What are the best betting odds right now?')">
+              <mat-icon>trending_up</mat-icon>
+              Best Odds
+            </button>
+            <button mat-stroked-button (click)="sendQuickMessage('Help me place a bet')">
+              <mat-icon>help</mat-icon>
+              Help with Betting
+            </button>
+          </div>
+        </div>
+      } @else {
+        <!-- Message List -->
+        @for (message of messages(); track message.id) {
+          <div class="message-item slide-up">
+            <div class="message-content">
+              <strong>{{ message.role === 'user' ? 'You' : 'ChatBet' }}:</strong>
+              <p>{{ message.content }}</p>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Typing Indicator -->
+      @if (isTyping()) {
+        <div class="typing-indicator fade-in">
+          <div class="typing-bubble">
+            <div class="typing-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <span class="typing-text">ChatBet is thinking...</span>
+          </div>
+        </div>
+      }
+
+      <!-- Auto-scroll anchor -->
+      <div #scrollAnchor></div>
+    </div>
+  </div>
+
+  <!-- Chat Input -->
+  <div class="chat-input-container">
+    <mat-divider></mat-divider>
+    <div class="simple-chat-input">
+      <input
+        type="text"
+        [placeholder]="getInputPlaceholder()"
+        [disabled]="!isConnected() || isLoading()"
+        #messageInput
+        (keyup.enter)="onInputSubmit(messageInput.value); messageInput.value = ''"
+        class="message-input">
+      <button
+        mat-fab
+        color="primary"
+        [disabled]="!isConnected() || isLoading()"
+        (click)="onInputSubmit(messageInput.value); messageInput.value = ''"
+        class="send-button">
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Display -->
+  @if (errorMessage()) {
+    <div class="error-banner">
+      <mat-icon>error</mat-icon>
+      <span>{{ errorMessage() }}</span>
+      <button mat-icon-button (click)="clearError()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+</div>

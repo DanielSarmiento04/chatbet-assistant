@@ -180,56 +180,110 @@ Be accurate and confident in your classifications. Consider context and user int
             """
             try:
                 api_client = await get_api_client()
-                end_date = datetime.now().replace(hour=23, minute=59, second=59)
                 
-                fixtures = await api_client.get_fixtures(
+                # Get fixtures using the correct API method signature
+                fixtures_response = await api_client.get_fixtures(
                     tournament_id=tournament_id,
-                    date_from=datetime.now(),
-                    date_to=end_date
+                    fixture_type="pre_match",
+                    language="en",
+                    time_zone="UTC"
                 )
                 
+                # Extract fixtures from response
+                fixtures = fixtures_response.fixtures
+                
                 # Sort by date and limit results
-                fixtures.sort(key=lambda x: x.scheduled_time)
-                return [f.model_dump() for f in fixtures[:15]]  # Limit to prevent token overflow
+                fixtures_list = [f.model_dump() for f in fixtures[:15]]  # Limit to prevent token overflow
+                return fixtures_list
                 
             except Exception as e:
                 logger.error(f"Error getting fixtures: {e}")
                 return []
         
         @tool
-        async def get_odds(match_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        async def get_odds(
+            sport_id: str = "1", 
+            tournament_id: Optional[str] = None, 
+            fixture_id: Optional[str] = None,
+            amount: float = 100.0
+        ) -> List[Dict[str, Any]]:
             """
             Get betting odds for matches.
             
             Args:
-                match_id: Optional specific match ID to get odds for
+                sport_id: ID of the sport (default: "1" for soccer)
+                tournament_id: Optional tournament ID
+                fixture_id: Optional specific fixture ID
+                amount: Bet amount for odds calculation (default: 100.0)
             """
             try:
+                # If no specific fixture is provided, we can't get odds
+                # The API requires sport_id, tournament_id, fixture_id, and amount
+                if not fixture_id or not tournament_id:
+                    logger.warning("Cannot get odds without fixture_id and tournament_id")
+                    return []
+                
                 api_client = await get_api_client()
-                odds = await api_client.get_odds(match_id=match_id)
+                odds = await api_client.get_odds(
+                    sport_id=sport_id,
+                    tournament_id=tournament_id,
+                    fixture_id=fixture_id,
+                    amount=amount
+                )
                 
-                # Limit results and simplify for LLM consumption
-                simplified_odds = []
-                for odd in odds[:10]:  # Limit matches
-                    match_odds = {
-                        "match_id": odd.match_id,
-                        "markets": []
-                    }
-                    
-                    for market in odd.markets[:3]:  # Limit markets per match
-                        market_data = {
-                            "market_name": market.name,
-                            "bet_type": market.bet_type,
-                            "outcomes": [
-                                {"name": outcome.name, "odds": float(outcome.odds)}
-                                for outcome in market.outcomes
-                            ]
-                        }
-                        match_odds["markets"].append(market_data)
-                    
-                    simplified_odds.append(match_odds)
+                if not odds:
+                    return []
                 
-                return simplified_odds
+                # Simplify odds data for LLM consumption based on actual MatchOdds structure
+                simplified_odds = {
+                    "fixture_id": fixture_id,
+                    "status": odds.status,
+                    "main_market": odds.main_market,
+                    "markets": []
+                }
+                
+                # Extract available betting markets from MatchOdds attributes
+                available_markets = []
+                
+                # Check main result market (1X2)
+                if odds.result is not None:
+                    available_markets.append({
+                        "market_name": "Match Result (1X2)",
+                        "data": odds.result
+                    })
+                
+                # Check over/under market
+                if odds.over_under is not None:
+                    available_markets.append({
+                        "market_name": "Over/Under",
+                        "data": odds.over_under
+                    })
+                
+                # Check both teams to score
+                if odds.both_teams_to_score is not None:
+                    available_markets.append({
+                        "market_name": "Both Teams to Score",
+                        "data": odds.both_teams_to_score
+                    })
+                
+                # Check double chance
+                if odds.double_chance is not None:
+                    available_markets.append({
+                        "market_name": "Double Chance",
+                        "data": odds.double_chance
+                    })
+                
+                # Check handicap
+                if odds.handicap is not None:
+                    available_markets.append({
+                        "market_name": "Handicap",
+                        "data": odds.handicap
+                    })
+                
+                # Limit to top 3 markets to prevent token overflow
+                simplified_odds["markets"] = available_markets[:3]
+                
+                return [simplified_odds]
                 
             except Exception as e:
                 logger.error(f"Error getting odds: {e}")

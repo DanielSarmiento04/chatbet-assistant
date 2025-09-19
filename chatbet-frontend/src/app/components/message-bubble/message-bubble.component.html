@@ -1,1 +1,147 @@
-<p>message-bubble works!</p>
+<div [class]="messageClasses()"
+     (mouseenter)="showActions.set(true)"
+     (mouseleave)="showActions.set(false)">
+
+  <!-- Message Header -->
+  <div class="message-header">
+    @if (showAvatar) {
+      <div class="message-avatar" [class]="isUserMessage() ? 'user-avatar' : 'bot-avatar'">
+        <mat-icon>{{ messageIcon() }}</mat-icon>
+      </div>
+    }
+
+    <div class="message-meta">
+      <span class="message-sender">
+        {{ isUserMessage() ? 'You' : (isSystemMessage() ? 'System' : 'ChatBet') }}
+      </span>
+
+      @if (showTimestamp) {
+        <span class="message-timestamp">{{ formattedTimestamp() }}</span>
+      }
+
+      @if (messageTypeIcon()) {
+        <mat-icon class="message-type-icon" [matTooltip]="message.messageType">
+          {{ messageTypeIcon() }}
+        </mat-icon>
+      }
+    </div>
+
+    <!-- Message Actions -->
+    @if (showActions() && !message.isLoading) {
+      <div class="message-actions">
+        <button mat-icon-button
+                (click)="copyMessage()"
+                matTooltip="Copy message"
+                class="action-button">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+
+        @if (isErrorMessage()) {
+          <button mat-icon-button
+                  (click)="retryMessage()"
+                  matTooltip="Retry sending"
+                  class="action-button">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Message Content -->
+  <div class="message-content">
+    @if (message.isLoading) {
+      <!-- Loading State -->
+      <div class="loading-content">
+        <div class="loading-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <span class="loading-text">Generating response...</span>
+      </div>
+    } @else {
+      <!-- Text Content -->
+      @if (message.messageType === MessageType.TEXT || message.messageType === MessageType.ERROR) {
+        <div class="text-content">{{ message.content }}</div>
+      }
+
+      <!-- Match Card -->
+      @if (message.messageType === MessageType.MATCH_CARD) {
+        <div class="match-card-content">
+          <mat-icon class="content-icon">sports_soccer</mat-icon>
+          <div class="content-text">{{ message.content }}</div>
+          <!-- TODO: Add structured match data display -->
+        </div>
+      }
+
+      <!-- Odds Table -->
+      @if (message.messageType === MessageType.ODDS_TABLE) {
+        <div class="odds-table-content">
+          <mat-icon class="content-icon">trending_up</mat-icon>
+          <div class="content-text">{{ message.content }}</div>
+          <!-- TODO: Add structured odds table -->
+        </div>
+      }
+
+      <!-- Recommendation -->
+      @if (message.messageType === MessageType.RECOMMENDATION) {
+        <div class="recommendation-content">
+          <mat-icon class="content-icon">lightbulb</mat-icon>
+          <div class="content-text">{{ message.content }}</div>
+          <!-- TODO: Add recommendation chips/actions -->
+        </div>
+      }
+
+      <!-- Tournament Info -->
+      @if (message.messageType === MessageType.TOURNAMENT_INFO) {
+        <div class="tournament-info-content">
+          <mat-icon class="content-icon">emoji_events</mat-icon>
+          <div class="content-text">{{ message.content }}</div>
+          <!-- TODO: Add tournament standings/info -->
+        </div>
+      }
+    }
+
+    <!-- Message Metadata -->
+    @if (message.detectedIntent && !message.isLoading) {
+      <div class="message-metadata">
+        <mat-chip-set>
+          <mat-chip>
+            <mat-icon matChipAvatar>psychology</mat-icon>
+            {{ message.detectedIntent }}
+          </mat-chip>
+
+          @if (message.intentConfidence && message.intentConfidence > 0.8) {
+            <mat-chip color="primary">
+              <mat-icon matChipAvatar>verified</mat-icon>
+              High Confidence
+            </mat-chip>
+          }
+        </mat-chip-set>
+      </div>
+    }
+
+    <!-- Error Details -->
+    @if (isErrorMessage() && message.errorMessage) {
+      <div class="error-details">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ message.errorMessage }}</span>
+      </div>
+    }
+
+    <!-- Performance Metrics (Development only) -->
+    @if (message.responseTimeMs && message.tokenCount) {
+      <div class="performance-metrics">
+        <span class="metric">
+          <mat-icon>schedule</mat-icon>
+          {{ message.responseTimeMs }}ms
+        </span>
+        <span class="metric">
+          <mat-icon>text_fields</mat-icon>
+          {{ message.tokenCount }} tokens
+        </span>
+      </div>
+    }
+  </div>
+</div>
