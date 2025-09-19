@@ -23,7 +23,6 @@ from uuid import uuid4
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain.schema import Document
 
 from ..core.config import settings
 from ..core.logging import get_logger, log_function_call
@@ -96,12 +95,16 @@ class ConversationManager:
         context = ConversationContext(
             session_id=session_id,
             user_id=user_id,
-            is_authenticated=user_id is not None
+            is_authenticated=user_id is not None,
+            timezone="UTC",
+            current_topic=None,
+            auth_token=None
         )
         
         conversation = Conversation(
             id=session_id,
-            context=context
+            context=context,
+            title=None
         )
         
         # Initialize LangChain memory - using new recommended approach
@@ -128,7 +131,10 @@ class ConversationManager:
         This method routes to different response strategies based on the
         classified intent. It's the heart of our conversation logic.
         """
-        user_message = conversation.last_user_message.content
+        user_message = conversation.last_user_message
+        if not user_message:
+            return "I don't see a message to respond to."
+            
         conversation_history = self._convert_to_langchain_messages(conversation)
         
         # Build enhanced context
@@ -144,33 +150,33 @@ class ConversationManager:
         
         # Route based on intent
         if intent_result.intent == IntentType.MATCH_SCHEDULE_QUERY:
-            return await self._handle_schedule_query(user_message, conversation_history, enhanced_context)
+            return await self._handle_schedule_query(user_message.content, conversation_history, enhanced_context)
         
         elif intent_result.intent == IntentType.ODDS_INFORMATION_QUERY:
-            return await self._handle_odds_query(user_message, conversation_history, enhanced_context)
+            return await self._handle_odds_query(user_message.content, conversation_history, enhanced_context)
         
         elif intent_result.intent == IntentType.BETTING_RECOMMENDATION:
-            return await self._handle_betting_recommendation(user_message, conversation_history, enhanced_context)
+            return await self._handle_betting_recommendation(user_message.content, conversation_history, enhanced_context)
         
         elif intent_result.intent == IntentType.TEAM_COMPARISON:
-            return await self._handle_team_comparison(user_message, conversation_history, enhanced_context)
+            return await self._handle_team_comparison(user_message.content, conversation_history, enhanced_context)
         
         elif intent_result.intent == IntentType.USER_BALANCE_QUERY:
-            return await self._handle_balance_query(user_message, conversation_history, enhanced_context)
+            return await self._handle_balance_query(user_message.content, conversation_history, enhanced_context)
         
         elif intent_result.intent == IntentType.BET_SIMULATION:
-            return await self._handle_bet_simulation(user_message, conversation_history, enhanced_context)
+            return await self._handle_bet_simulation(user_message.content, conversation_history, enhanced_context)
         
         elif intent_result.intent == IntentType.GREETING:
-            return await self._handle_greeting(user_message, conversation_history, enhanced_context)
+            return await self._handle_greeting(user_message.content, conversation_history, enhanced_context)
         
         elif intent_result.intent == IntentType.HELP_REQUEST:
-            return await self._handle_help_request(user_message, conversation_history, enhanced_context)
+            return await self._handle_help_request(user_message.content, conversation_history, enhanced_context)
         
         else:
             # General response for unclear or general queries
             return await self.llm_service.generate_response(
-                user_message, conversation_history, enhanced_context
+                user_message.content, conversation_history, enhanced_context
             )
     
     async def _handle_schedule_query(self, user_message: str, history: List[BaseMessage], context: Dict[str, Any]) -> str:
@@ -594,6 +600,125 @@ Just ask me anything about sports betting, and I'll help you make informed decis
         self.sessions.clear()
         self.memories.clear()
         await self.llm_service.cleanup()
+
+    async def process_message_with_streaming(
+        self, 
+        request: ChatRequest, 
+        streaming_callback
+    ) -> None:
+        """
+        Process a chat message with WebSocket streaming.
+        
+        This method integrates with WebSocket streaming callbacks to provide
+        real-time response generation for connected clients.
+        
+        Args:
+            request: Chat request containing user message
+            streaming_callback: WebSocket streaming callback instance
+        """
+        start_time = datetime.now()
+        
+        try:
+            # Get or create conversation
+            conversation = await self.start_conversation(
+                user_id=request.user_id,
+                session_id=request.session_id
+            )
+            history = self.memories[conversation.id]
+            
+            # Classify user intent first
+            intent_result = await self.llm_service.classify_intent(request.message)
+            logger.debug(f"Classified intent: {intent_result.intent} (confidence: {intent_result.confidence})")
+            
+            # Create user message
+            user_msg = ChatMessage(
+                role=MessageRole.USER,
+                content=request.message,
+                session_id=conversation.id,
+                user_id=request.user_id,
+                detected_intent=intent_result.intent,
+                intent_confidence=intent_result.confidence,
+                response_time_ms=None,
+                token_count=None,
+                function_calls=None
+            )
+            
+            # Add to conversation and memory
+            conversation.add_message(user_msg)
+            history.add_user_message(request.message)
+            
+            # Generate streaming response with callback
+            await self._generate_streaming_response(
+                conversation=conversation,
+                intent_result=intent_result,
+                streaming_callback=streaming_callback,
+                user_context={}
+            )
+            
+        except Exception as e:
+            logger.error(f"Error in streaming message processing: {str(e)}", exc_info=True)
+            # The streaming callback should handle error notification
+            raise
+    
+    async def _generate_streaming_response(
+        self,
+        conversation: Conversation,
+        intent_result: IntentClassificationResult,
+        streaming_callback,
+        user_context: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Generate streaming response using the provided callback.
+        
+        This method integrates the LLM service with WebSocket streaming
+        to provide real-time response generation.
+        """
+        user_message = conversation.last_user_message
+        if not user_message:
+            raise ValueError("No user message found in conversation")
+            
+        conversation_history = self._convert_to_langchain_messages(conversation)
+        
+        # Build enhanced context
+        enhanced_context = {
+            "intent": intent_result.intent,
+            "confidence": intent_result.confidence,
+            "entities": intent_result.entities,
+            "conversation_context": conversation.context.model_dump(),
+        }
+        
+        if user_context:
+            enhanced_context.update(user_context)
+        
+        # Generate response with streaming callback
+        # Note: For now, we'll use the standard generate_response and implement
+        # streaming at the WebSocket level. A future enhancement would be to 
+        # modify the LLM service to accept streaming callbacks directly.
+        response_content = await self.llm_service.generate_response(
+            user_message=user_message.content,
+            conversation_history=conversation_history,
+            user_context=enhanced_context,
+            stream=True
+        )
+        
+        # Create assistant message for conversation history
+        response_time_ms = int((datetime.now() - datetime.now()).total_seconds() * 1000)  # Will be updated by callback
+        assistant_msg = ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content=response_content,
+            session_id=conversation.id,
+            user_id=conversation.context.user_id,
+            detected_intent=None,
+            intent_confidence=None,
+            response_time_ms=response_time_ms,
+            token_count=None,
+            function_calls=None
+        )
+        
+        # Add to conversation and memory
+        conversation.add_message(assistant_msg)
+        history = self.memories[conversation.id]
+        history.add_ai_message(response_content)
 
 
 # Global conversation manager instance

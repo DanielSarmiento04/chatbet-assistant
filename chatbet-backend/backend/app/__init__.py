@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-# Create the app instance first
+# We'll define the lifespan in views.py and import it here
+# Create the app instance first without lifespan for now
 app = FastAPI(
     title="ChatBet Assistant API",
     version="1.0.0",

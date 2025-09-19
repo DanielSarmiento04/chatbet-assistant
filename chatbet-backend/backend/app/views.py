@@ -9,7 +9,6 @@ from fastapi import Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
 import logging
 import time
 import uuid
@@ -22,8 +21,11 @@ from .core.logging import setup_logging, get_logger
 from .core.security import get_api_key_auth
 from .api.chat import router as chat_router
 from .api.health import router as health_router
+from .api.websocket import router as websocket_router
 from .utils.exceptions import ChatBetException
 from .services.conversation_manager import get_conversation_manager
+from .services.websocket_manager import WebSocketConnectionManager
+from .services.sports_streaming import get_sports_streamer, cleanup_sports_streamer
 
 # Setup logging first
 setup_logging()
@@ -31,35 +33,52 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 
-@asynccontextmanager
-async def lifespan(app_instance) -> AsyncGenerator[None, None]:
-    """Application lifespan manager."""
+# Configure FastAPI application
+app.docs_url = "/docs" if settings.debug else None
+app.redoc_url = "/redoc" if settings.debug else None
+
+# Set up lifespan events manually since we can't modify constructor after creation
+@app.on_event("startup")
+async def startup_event():
+    """Handle application startup."""
     logger.info("Starting ChatBet Assistant API")
     
-    # Initialize services
     try:
-        # conversation_manager = get_conversation_manager()
-        # await conversation_manager.initialize()  # Comment out until method exists
+        # Initialize WebSocket manager
+        websocket_manager = WebSocketConnectionManager()
+        app.state.websocket_manager = websocket_manager
+        
+        # Initialize sports streamer
+        sports_streamer = get_sports_streamer(websocket_manager)
+        await sports_streamer.initialize()
+        await sports_streamer.start_streaming()
+        app.state.sports_streamer = sports_streamer
+        
         logger.info("Services initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize services: {e}")
         raise
-    
-    yield
-    
-    # Cleanup
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Handle application shutdown."""
     logger.info("Shutting down ChatBet Assistant API")
+    
     try:
-        # conversation_manager = get_conversation_manager()
-        # await conversation_manager.cleanup()
+        # Cleanup sports streamer
+        await cleanup_sports_streamer()
+        
+        # Cleanup WebSocket connections
+        if hasattr(app.state, 'websocket_manager'):
+            manager = app.state.websocket_manager
+            active_sessions = list(manager.connections.keys())
+            for session_id in active_sessions:
+                await manager.disconnect(session_id, "server_shutdown")
+        
         logger.info("Services cleaned up successfully")
     except Exception as e:
         logger.error(f"Error during cleanup: {e}")
-
-
-# Configure FastAPI application
-app.docs_url = "/docs" if settings.debug else None
-app.redoc_url = "/redoc" if settings.debug else None
 
 # # Add middleware
 # app.add_middleware(
@@ -192,6 +211,7 @@ app.include_router(
     tags=["chat"],
     dependencies=[Depends(get_api_key_auth)] if not settings.debug else []
 )
+app.include_router(websocket_router, prefix="/ws", tags=["websocket"])
 
 
 @app.get("/")
