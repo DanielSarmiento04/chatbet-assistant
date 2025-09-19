@@ -41,18 +41,14 @@ async def send_message(request: ChatRequest) -> ChatResponse:
             }
         )
         
-        # Process the message (simplified implementation)
-        # response = await conversation_manager.process_message(request)
-        
-        # For now, return a simple response until the conversation manager is fully implemented
-        response = ChatResponse(
-            message="Thank you for your message. I'm a ChatBet assistant and I'm here to help with sports betting insights.",
-            session_id=request.session_id or "default-session",
-            message_id=f"msg_{datetime.utcnow().timestamp()}",
-            response_time_ms=100,
-            token_count=50,
-            detected_intent=IntentType.GENERAL_SPORTS_QUERY,
-            intent_confidence=0.8
+        # Process the message through the conversation manager
+        response = await conversation_manager.process_message(
+            session_id=request.session_id,
+            user_message=request.message,
+            user_context={
+                "user_id": request.user_id,
+                "preferences": request.preferences
+            } if request.preferences else {"user_id": request.user_id}
         )
         
         logger.info(
@@ -99,17 +95,14 @@ async def get_conversation_history(
     Returns the conversation history, optionally filtered by session.
     """
     try:
-        # conversation_manager = get_conversation_manager()
+        conversation_manager = get_conversation_manager()
         
-        # history = await conversation_manager.get_conversation_history(
-        #     user_id=user_id,
-        #     session_id=session_id,
-        #     limit=limit,
-        #     offset=offset
-        # )
-        
-        # Simplified implementation for now
-        history = []
+        history = await conversation_manager.get_conversation_history(
+            user_id=user_id,
+            session_id=session_id,
+            limit=limit,
+            offset=offset
+        )
         
         return {
             "user_id": user_id,
@@ -136,23 +129,20 @@ async def clear_conversation_history(
     Optionally clear only a specific session.
     """
     try:
-        # conversation_manager = get_conversation_manager()
+        conversation_manager = get_conversation_manager()
         
-        # # Add to background tasks for async processing
-        # if background_tasks:
-        #     background_tasks.add_task(
-        #         conversation_manager.clear_conversation_history,
-        #         user_id=user_id,
-        #         session_id=session_id
-        #     )
-        # else:
-        #     await conversation_manager.clear_conversation_history(
-        #         user_id=user_id,
-        #         session_id=session_id
-        #     )
-        
-        # Simplified implementation for now
-        logger.info(f"Request to clear conversation history for user {user_id}, session {session_id}")
+        # Add to background tasks for async processing
+        if background_tasks:
+            background_tasks.add_task(
+                conversation_manager.clear_conversation_history,
+                user_id=user_id,
+                session_id=session_id
+            )
+        else:
+            await conversation_manager.clear_conversation_history(
+                user_id=user_id,
+                session_id=session_id
+            )
         
         return {
             "message": "Conversation history cleared successfully",
