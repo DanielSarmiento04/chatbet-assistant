@@ -1,217 +1,122 @@
 /**
  * ChatBet Angular Material Theme Configuration
- * Sports betting optimized design system
+ * Sports betting optimized design system - Angular Material 19 (M3) Compatible
  */
 
+// Custom Theming for Angular Material
+// For more information: https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
 // Include the common styles for Angular Material. We include this here so that you only
 // have to load a single css file for Angular Material in your app.
 @include mat.core();
 
-// Custom color palettes
-$chatbet-primary-palette: mat.define-palette((
-  50: #e8f5e8,
-  100: #c5e6c5,
-  200: #9fd6a0,
-  300: #79c579,
-  400: #5cb85c,
-  500: #28a745,  // Main green
-  600: #259b3e,
-  700: #208d35,
-  800: #1b7f2d,
-  900: #146b1f,
-  A100: #c5e6c5,
-  A200: #9fd6a0,
-  A400: #5cb85c,
-  A700: #208d35,
-  contrast: (
-    50: rgba(black, 0.87),
-    100: rgba(black, 0.87),
-    200: rgba(black, 0.87),
-    300: rgba(black, 0.87),
-    400: rgba(black, 0.87),
-    500: white,
-    600: white,
-    700: white,
-    800: white,
-    900: white,
-    A100: rgba(black, 0.87),
-    A200: rgba(black, 0.87),
-    A400: rgba(black, 0.87),
-    A700: white,
-  )
-));
-
-$chatbet-accent-palette: mat.define-palette((
-  50: #fff3e0,
-  100: #ffe1b3,
-  200: #ffcd80,
-  300: #ffb84d,
-  400: #ffa926,
-  500: #ff9800,  // Main orange
-  600: #ff8f00,
-  700: #ff8400,
-  800: #ff7a00,
-  900: #ff6900,
-  A100: #ffe1b3,
-  A200: #ffcd80,
-  A400: #ffa926,
-  A700: #ff8400,
-  contrast: (
-    50: rgba(black, 0.87),
-    100: rgba(black, 0.87),
-    200: rgba(black, 0.87),
-    300: rgba(black, 0.87),
-    400: rgba(black, 0.87),
-    500: rgba(black, 0.87),
-    600: white,
-    700: white,
-    800: white,
-    900: white,
-    A100: rgba(black, 0.87),
-    A200: rgba(black, 0.87),
-    A400: rgba(black, 0.87),
-    A700: white,
-  )
-));
-
-$chatbet-warn-palette: mat.define-palette((
-  50: #ffebee,
-  100: #ffcdd2,
-  200: #ef9a9a,
-  300: #e57373,
-  400: #ef5350,
-  500: #f44336,  // Main red
-  600: #e53935,
-  700: #d32f2f,
-  800: #c62828,
-  900: #b71c1c,
-  A100: #ff8a80,
-  A200: #ff5252,
-  A400: #ff1744,
-  A700: #d50000,
-  contrast: (
-    50: rgba(black, 0.87),
-    100: rgba(black, 0.87),
-    200: rgba(black, 0.87),
-    300: rgba(black, 0.87),
-    400: rgba(black, 0.87),
-    500: white,
-    600: white,
-    700: white,
-    800: white,
-    900: white,
-    A100: rgba(black, 0.87),
-    A200: white,
-    A400: white,
-    A700: white,
-  )
-));
-
-// Typography configuration
-$chatbet-typography: mat.define-typography-config(
-  $font-family: '"Inter", "Roboto", "Helvetica Neue", sans-serif',
-  $headline-1: mat.define-typography-level(112px, 112px, 300, $letter-spacing: -0.05em),
-  $headline-2: mat.define-typography-level(56px, 56px, 400, $letter-spacing: -0.02em),
-  $headline-3: mat.define-typography-level(45px, 48px, 400, $letter-spacing: -0.005em),
-  $headline-4: mat.define-typography-level(34px, 40px, 400),
-  $headline-5: mat.define-typography-level(24px, 32px, 500),
-  $headline-6: mat.define-typography-level(20px, 32px, 600),
-  $subtitle-1: mat.define-typography-level(16px, 28px, 500),
-  $subtitle-2: mat.define-typography-level(14px, 22px, 600),
-  $body-1: mat.define-typography-level(16px, 24px, 400),
-  $body-2: mat.define-typography-level(14px, 20px, 400),
-  $caption: mat.define-typography-level(12px, 20px, 400),
-  $button: mat.define-typography-level(14px, 36px, 600),
-  $overline: mat.define-typography-level(10px, 32px, 400),
-);
-
-// Light theme
-$chatbet-light-theme: mat.define-light-theme((
+// Define M3 theme using the new system
+$chatbet-theme: mat.define-theme((
   color: (
-    primary: $chatbet-primary-palette,
-    accent: $chatbet-accent-palette,
-    warn: $chatbet-warn-palette,
+    theme-type: light,
+    primary: mat.$green-palette,
+    tertiary: mat.$orange-palette,
   ),
-  typography: $chatbet-typography,
-  density: 0,
+  typography: (
+    brand-family: 'Inter',
+    plain-family: 'Inter',
+  ),
 ));
 
-// Dark theme
-$chatbet-dark-theme: mat.define-dark-theme((
+// Dark theme variant
+$chatbet-dark-theme: mat.define-theme((
   color: (
-    primary: $chatbet-primary-palette,
-    accent: $chatbet-accent-palette,
-    warn: $chatbet-warn-palette,
+    theme-type: dark,
+    primary: mat.$green-palette,
+    tertiary: mat.$orange-palette,
   ),
-  typography: $chatbet-typography,
-  density: 0,
+  typography: (
+    brand-family: 'Inter',
+    plain-family: 'Inter',
+  ),
 ));
 
-// Include theme styles for core and each component used in your app.
-@include mat.all-component-themes($chatbet-light-theme);
+// Apply the light theme by default
+html {
+  @include mat.all-component-themes($chatbet-theme);
+}
 
-// Dark theme class
-.dark-theme {
-  @include mat.all-component-colors($chatbet-dark-theme);
+// Apply dark theme when dark-theme class is present
+html.dark-theme {
+  @include mat.all-component-themes($chatbet-dark-theme);
 }
 
 // Custom CSS Variables for consistent theming
 :root {
-  // Light theme variables
-  --chatbet-primary: #28a745;
-  --chatbet-primary-light: #5cb85c;
-  --chatbet-primary-dark: #1b7f2d;
+  // ChatBet brand colors
+  --chatbet-primary: #2e7d32;
+  --chatbet-primary-light: #4caf50;
+  --chatbet-primary-dark: #1b5e20;
   --chatbet-accent: #ff9800;
-  --chatbet-accent-light: #ffa926;
-  --chatbet-accent-dark: #ff8400;
+  --chatbet-accent-light: #ffb74d;
+  --chatbet-accent-dark: #f57c00;
   --chatbet-warn: #f44336;
   --chatbet-warn-light: #ef5350;
   --chatbet-warn-dark: #d32f2f;
 
-  // Background colors
-  --chatbet-bg-primary: #ffffff;
-  --chatbet-bg-secondary: #f8f9fa;
-  --chatbet-bg-tertiary: #e9ecef;
-  --chatbet-bg-card: #ffffff;
-  --chatbet-bg-app-bar: #ffffff;
+  // M3 Surface colors (light theme)
+  --chatbet-surface: #fefbff;
+  --chatbet-surface-dim: #ded8e1;
+  --chatbet-surface-bright: #fef7ff;
+  --chatbet-surface-container-lowest: #ffffff;
+  --chatbet-surface-container-low: #f7f2fa;
+  --chatbet-surface-container: #f1ecf4;
+  --chatbet-surface-container-high: #ece6f0;
+  --chatbet-surface-container-highest: #e6e0e9;
 
-  // Text colors
-  --chatbet-text-primary: rgba(0, 0, 0, 0.87);
-  --chatbet-text-secondary: rgba(0, 0, 0, 0.6);
-  --chatbet-text-disabled: rgba(0, 0, 0, 0.38);
-  --chatbet-text-hint: rgba(0, 0, 0, 0.38);
+  // Background colors
+  --chatbet-bg-primary: var(--chatbet-surface);
+  --chatbet-bg-secondary: var(--chatbet-surface-container-low);
+  --chatbet-bg-tertiary: var(--chatbet-surface-container);
+  --chatbet-bg-card: var(--chatbet-surface-container-lowest);
+  --chatbet-bg-app-bar: var(--chatbet-surface-container);
+
+  // Text colors (M3)
+  --chatbet-on-surface: #1d1b20;
+  --chatbet-on-surface-variant: #49454f;
+  --chatbet-outline: #79747e;
+  --chatbet-outline-variant: #cab6cf;
+
+  --chatbet-text-primary: var(--chatbet-on-surface);
+  --chatbet-text-secondary: var(--chatbet-on-surface-variant);
+  --chatbet-text-disabled: color-mix(in srgb, var(--chatbet-on-surface) 38%, transparent);
+  --chatbet-text-hint: var(--chatbet-outline);
 
   // Border colors
-  --chatbet-border-light: rgba(0, 0, 0, 0.12);
-  --chatbet-border-medium: rgba(0, 0, 0, 0.24);
-  --chatbet-border-dark: rgba(0, 0, 0, 0.38);
+  --chatbet-border-light: var(--chatbet-outline-variant);
+  --chatbet-border-medium: var(--chatbet-outline);
+  --chatbet-border-dark: var(--chatbet-on-surface-variant);
 
   // Chat specific colors
-  --chatbet-message-user-bg: #28a745;
+  --chatbet-message-user-bg: var(--chatbet-primary);
   --chatbet-message-user-text: #ffffff;
-  --chatbet-message-bot-bg: #f8f9fa;
-  --chatbet-message-bot-text: rgba(0, 0, 0, 0.87);
-  --chatbet-message-error-bg: #f8d7da;
-  --chatbet-message-error-text: #721c24;
+  --chatbet-message-bot-bg: var(--chatbet-surface-container-high);
+  --chatbet-message-bot-text: var(--chatbet-on-surface);
+  --chatbet-message-error-bg: #ffeaea;
+  --chatbet-message-error-text: #ba1a1a;
 
   // Odds colors
-  --chatbet-odds-positive: #28a745;
-  --chatbet-odds-negative: #dc3545;
-  --chatbet-odds-neutral: #6c757d;
+  --chatbet-odds-positive: #2e7d32;
+  --chatbet-odds-negative: #d32f2f;
+  --chatbet-odds-neutral: #616161;
 
   // Sports betting colors
-  --chatbet-win: #28a745;
-  --chatbet-loss: #dc3545;
-  --chatbet-draw: #ffc107;
+  --chatbet-win: #2e7d32;
+  --chatbet-loss: #d32f2f;
+  --chatbet-draw: #f57c00;
 
   // Animation timings
   --chatbet-animation-fast: 150ms;
   --chatbet-animation-medium: 300ms;
   --chatbet-animation-slow: 500ms;
 
-  // Spacing
+  // Spacing (M3 spacing scale)
   --chatbet-spacing-xs: 4px;
   --chatbet-spacing-sm: 8px;
   --chatbet-spacing-md: 16px;
@@ -219,43 +124,70 @@ $chatbet-dark-theme: mat.define-dark-theme((
   --chatbet-spacing-xl: 32px;
   --chatbet-spacing-xxl: 48px;
 
-  // Border radius
-  --chatbet-border-radius-sm: 4px;
-  --chatbet-border-radius-md: 8px;
-  --chatbet-border-radius-lg: 12px;
-  --chatbet-border-radius-xl: 16px;
+  // Border radius (M3 shape scale)
+  --chatbet-border-radius-xs: 4px;
+  --chatbet-border-radius-sm: 8px;
+  --chatbet-border-radius-md: 12px;
+  --chatbet-border-radius-lg: 16px;
+  --chatbet-border-radius-xl: 28px;
   --chatbet-border-radius-full: 50%;
 
-  // Shadows
-  --chatbet-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-  --chatbet-shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-  --chatbet-shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
-  --chatbet-shadow-xl: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  // Elevation (M3 elevation system)
+  --chatbet-elevation-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --chatbet-elevation-2: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --chatbet-elevation-3: 0px 1px 3px 0px rgba(0, 0, 0, 0.3), 0px 4px 8px 3px rgba(0, 0, 0, 0.15);
+  --chatbet-elevation-4: 0px 2px 3px 0px rgba(0, 0, 0, 0.3), 0px 6px 10px 4px rgba(0, 0, 0, 0.15);
+  --chatbet-elevation-5: 0px 4px 4px 0px rgba(0, 0, 0, 0.3), 0px 8px 12px 6px rgba(0, 0, 0, 0.15);
+
+  // Legacy shadow variables for backward compatibility
+  --chatbet-shadow-sm: var(--chatbet-elevation-1);
+  --chatbet-shadow-md: var(--chatbet-elevation-3);
+  --chatbet-shadow-lg: var(--chatbet-elevation-4);
+  --chatbet-shadow-xl: var(--chatbet-elevation-5);
 }
 
 // Dark theme variables
-.dark-theme {
-  --chatbet-bg-primary: #121212;
-  --chatbet-bg-secondary: #1e1e1e;
-  --chatbet-bg-tertiary: #2d2d2d;
-  --chatbet-bg-card: #1e1e1e;
-  --chatbet-bg-app-bar: #1e1e1e;
+html.dark-theme {
+  // M3 Surface colors (dark theme)
+  --chatbet-surface: #141218;
+  --chatbet-surface-dim: #141218;
+  --chatbet-surface-bright: #3b383e;
+  --chatbet-surface-container-lowest: #0f0d13;
+  --chatbet-surface-container-low: #1d1b20;
+  --chatbet-surface-container: #211f26;
+  --chatbet-surface-container-high: #2b2930;
+  --chatbet-surface-container-highest: #36343b;
 
-  --chatbet-text-primary: rgba(255, 255, 255, 0.87);
-  --chatbet-text-secondary: rgba(255, 255, 255, 0.6);
-  --chatbet-text-disabled: rgba(255, 255, 255, 0.38);
-  --chatbet-text-hint: rgba(255, 255, 255, 0.38);
+  // Background colors
+  --chatbet-bg-primary: var(--chatbet-surface);
+  --chatbet-bg-secondary: var(--chatbet-surface-container-low);
+  --chatbet-bg-tertiary: var(--chatbet-surface-container);
+  --chatbet-bg-card: var(--chatbet-surface-container-low);
+  --chatbet-bg-app-bar: var(--chatbet-surface-container);
 
-  --chatbet-border-light: rgba(255, 255, 255, 0.12);
-  --chatbet-border-medium: rgba(255, 255, 255, 0.24);
-  --chatbet-border-dark: rgba(255, 255, 255, 0.38);
+  // Text colors (M3 dark)
+  --chatbet-on-surface: #e6e0e9;
+  --chatbet-on-surface-variant: #cab6cf;
+  --chatbet-outline: #938f99;
+  --chatbet-outline-variant: #49454f;
 
-  --chatbet-message-user-bg: #28a745;
+  --chatbet-text-primary: var(--chatbet-on-surface);
+  --chatbet-text-secondary: var(--chatbet-on-surface-variant);
+  --chatbet-text-disabled: color-mix(in srgb, var(--chatbet-on-surface) 38%, transparent);
+  --chatbet-text-hint: var(--chatbet-outline);
+
+  // Border colors
+  --chatbet-border-light: var(--chatbet-outline-variant);
+  --chatbet-border-medium: var(--chatbet-outline);
+  --chatbet-border-dark: var(--chatbet-on-surface-variant);
+
+  // Chat specific colors (dark theme)
+  --chatbet-message-user-bg: var(--chatbet-primary);
   --chatbet-message-user-text: #ffffff;
-  --chatbet-message-bot-bg: #2d2d2d;
-  --chatbet-message-bot-text: rgba(255, 255, 255, 0.87);
-  --chatbet-message-error-bg: #f5c6cb;
-  --chatbet-message-error-text: #721c24;
+  --chatbet-message-bot-bg: var(--chatbet-surface-container-high);
+  --chatbet-message-bot-text: var(--chatbet-on-surface);
+  --chatbet-message-error-bg: #93000a;
+  --chatbet-message-error-text: #ffb4ab;
 }
 
 // Global styles
@@ -267,7 +199,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: Inter, Roboto, "Helvetica Neue", sans-serif;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--chatbet-bg-primary);
   color: var(--chatbet-text-primary);
 }
@@ -316,17 +248,17 @@ html, body {
   .py-#{$i} { padding-top: #{$i * 4}px; padding-bottom: #{$i * 4}px; }
 }
 
-// Component-specific styles
+// Component-specific styles using M3 design tokens
 .chatbet-card {
   background: var(--chatbet-bg-card);
-  border-radius: var(--chatbet-border-radius-lg);
-  box-shadow: var(--chatbet-shadow-sm);
+  border-radius: var(--chatbet-border-radius-md);
+  box-shadow: var(--chatbet-elevation-1);
   padding: var(--chatbet-spacing-md);
   border: 1px solid var(--chatbet-border-light);
   transition: box-shadow var(--chatbet-animation-fast) ease;
 
   &:hover {
-    box-shadow: var(--chatbet-shadow-md);
+    box-shadow: var(--chatbet-elevation-2);
   }
 }
 
@@ -334,22 +266,28 @@ html, body {
   background-color: var(--chatbet-primary);
   color: white;
   border: none;
-  border-radius: var(--chatbet-border-radius-md);
-  padding: var(--chatbet-spacing-sm) var(--chatbet-spacing-md);
-  font-weight: 600;
+  border-radius: var(--chatbet-border-radius-lg);
+  padding: var(--chatbet-spacing-sm) var(--chatbet-spacing-lg);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.1px;
   cursor: pointer;
   transition: all var(--chatbet-animation-fast) ease;
+  box-shadow: var(--chatbet-elevation-1);
 
   &:hover {
     background-color: var(--chatbet-primary-dark);
-    transform: translateY(-1px);
-    box-shadow: var(--chatbet-shadow-md);
+    box-shadow: var(--chatbet-elevation-2);
+  }
+
+  &:active {
+    box-shadow: var(--chatbet-elevation-1);
   }
 
   &:disabled {
-    background-color: var(--chatbet-text-disabled);
+    background-color: color-mix(in srgb, var(--chatbet-on-surface) 12%, transparent);
+    color: color-mix(in srgb, var(--chatbet-on-surface) 38%, transparent);
     cursor: not-allowed;
-    transform: none;
     box-shadow: none;
   }
 }
@@ -357,21 +295,27 @@ html, body {
 .chatbet-button-secondary {
   background-color: transparent;
   color: var(--chatbet-primary);
-  border: 2px solid var(--chatbet-primary);
-  border-radius: var(--chatbet-border-radius-md);
-  padding: var(--chatbet-spacing-sm) var(--chatbet-spacing-md);
-  font-weight: 600;
+  border: 1px solid var(--chatbet-outline);
+  border-radius: var(--chatbet-border-radius-lg);
+  padding: var(--chatbet-spacing-sm) var(--chatbet-spacing-lg);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.1px;
   cursor: pointer;
   transition: all var(--chatbet-animation-fast) ease;
 
   &:hover {
-    background-color: var(--chatbet-primary);
-    color: white;
+    background-color: color-mix(in srgb, var(--chatbet-primary) 8%, transparent);
+    border-color: var(--chatbet-primary);
+  }
+
+  &:active {
+    background-color: color-mix(in srgb, var(--chatbet-primary) 12%, transparent);
   }
 
   &:disabled {
-    border-color: var(--chatbet-text-disabled);
-    color: var(--chatbet-text-disabled);
+    border-color: color-mix(in srgb, var(--chatbet-on-surface) 12%, transparent);
+    color: color-mix(in srgb, var(--chatbet-on-surface) 38%, transparent);
     cursor: not-allowed;
   }
 }
@@ -384,15 +328,15 @@ html, body {
 
 ::-webkit-scrollbar-track {
   background: var(--chatbet-bg-secondary);
-  border-radius: var(--chatbet-border-radius-sm);
+  border-radius: var(--chatbet-border-radius-xs);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--chatbet-border-medium);
-  border-radius: var(--chatbet-border-radius-sm);
+  background: var(--chatbet-outline-variant);
+  border-radius: var(--chatbet-border-radius-xs);
 
   &:hover {
-    background: var(--chatbet-border-dark);
+    background: var(--chatbet-outline);
   }
 }
 
@@ -415,15 +359,31 @@ html, body {
 }
 
 @keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes bounceIn {
-  0% { transform: scale(0.3); opacity: 0; }
-  50% { transform: scale(1.05); }
-  70% { transform: scale(0.9); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 // Responsive breakpoints
