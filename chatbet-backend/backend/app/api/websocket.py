@@ -18,6 +18,7 @@ from fastapi.responses import HTMLResponse
 
 from ..core.logging import get_logger
 from ..core.config import get_settings
+from ..core.auth import CurrentUser, OptionalUser, get_current_user, get_optional_user
 from ..models.websocket_models import (
     WSUserMessage, WSError, WSPing, WebSocketMessageType,
     parse_websocket_message, create_error_message
@@ -335,12 +336,13 @@ async def websocket_sports_updates(
 
 
 @router.get("/status")
-async def websocket_status():
+async def websocket_status(current_user: CurrentUser):
     """
     Get WebSocket connection status and statistics.
     
     Returns information about active connections, performance metrics,
     and system health for monitoring purposes.
+    Requires authentication for security.
     """
     connection_manager = get_connection_manager()
     
@@ -616,7 +618,7 @@ async def websocket_ping_endpoint():
 
 
 @router.get("/debug/stats")
-async def websocket_debug_stats():
+async def websocket_debug_stats(current_user: CurrentUser):
     """
     Get WebSocket debugging statistics.
     
@@ -625,6 +627,8 @@ async def websocket_debug_stats():
     - Message patterns
     - Performance metrics
     - Error summaries
+    
+    Requires authentication for security.
     """
     try:
         debugger = get_websocket_debugger()
@@ -639,15 +643,18 @@ async def websocket_debug_stats():
 
 
 @router.get("/debug/session/{session_id}")
-async def websocket_debug_session(session_id: str):
+async def websocket_debug_session(session_id: str, current_user: CurrentUser):
     """
     Get debugging information for a specific session.
     
     Args:
         session_id: The session ID to get information for
+        current_user: Authenticated user making the request
         
     Returns:
         Session-specific debugging information
+        
+    Requires authentication for security.
     """
     try:
         debugger = get_websocket_debugger()
@@ -670,12 +677,14 @@ async def websocket_debug_session(session_id: str):
 
 
 @router.post("/debug/clear")
-async def websocket_debug_clear():
+async def websocket_debug_clear(current_user: CurrentUser):
     """
     Clear WebSocket debugging history.
     
     This endpoint clears all stored debugging data including
     message history, connection events, and performance metrics.
+    
+    Requires authentication for security.
     """
     try:
         debugger = get_websocket_debugger()
@@ -692,12 +701,14 @@ async def websocket_debug_clear():
 
 
 @router.get("/debug/performance")
-async def websocket_debug_performance():
+async def websocket_debug_performance(current_user: CurrentUser):
     """
     Get WebSocket performance analysis.
     
     Returns detailed performance metrics and recommendations
     for optimizing WebSocket connections and message processing.
+    
+    Requires authentication for security.
     """
     try:
         debugger = get_websocket_debugger()

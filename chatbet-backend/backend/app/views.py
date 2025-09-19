@@ -20,6 +20,7 @@ from .core.config import get_settings
 from .core.logging import setup_logging, get_logger
 from .core.security import get_api_key_auth
 from .api.chat import router as chat_router
+from .api.auth import router as auth_router
 from .api.health import router as health_router
 from .api.websocket import router as websocket_router
 from .utils.exceptions import ChatBetException
@@ -205,6 +206,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 # Include existing and new routers
 app.include_router(llm_service.router)
 app.include_router(health_router, prefix="/health", tags=["health"])
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["authentication"])
 app.include_router(
     chat_router, 
     prefix="/api/v1/chat", 

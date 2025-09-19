@@ -5,7 +5,7 @@ This module provides the main chat endpoints for the ChatBet assistant,
 including message processing, conversation management, and streaming responses.
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import StreamingResponse
 from typing import AsyncGenerator, Dict, Any, Optional
 import json
@@ -13,7 +13,9 @@ import asyncio
 from datetime import datetime
 
 from ..core.logging import get_logger
+from ..core.auth import CurrentUser, OptionalUser
 from ..models.conversation import ChatRequest, ChatResponse, IntentType
+from ..models.api_models import UserInfo
 from ..services.conversation_manager import get_conversation_manager
 from ..utils.exceptions import ConversationException, LLMException, APIException
 
@@ -22,24 +24,42 @@ router = APIRouter()
 
 
 @router.post("/message", response_model=ChatResponse)
-async def send_message(request: ChatRequest) -> ChatResponse:
+async def send_message(
+    request: ChatRequest, 
+    current_user: OptionalUser = None
+) -> ChatResponse:
     """
     Send a message to the ChatBet assistant.
     
     Processes the user's message and returns an intelligent response
     with betting insights, recommendations, or general information.
+    
+    Authentication is optional - provides enhanced features when authenticated.
     """
     try:
         conversation_manager = get_conversation_manager()
         
-        logger.info(
-            f"Processing chat message",
-            extra={
-                "user_id": request.user_id,
-                "message_length": len(request.message),
-                "session_id": request.session_id
-            }
-        )
+        # If user is authenticated, update request with user info
+        if current_user:
+            request.user_id = current_user.user_id
+            logger.info(
+                f"Processing authenticated chat message",
+                extra={
+                    "user_id": current_user.user_id,
+                    "username": current_user.username,
+                    "message_length": len(request.message),
+                    "session_id": request.session_id
+                }
+            )
+        else:
+            logger.info(
+                f"Processing anonymous chat message",
+                extra={
+                    "user_id": request.user_id,
+                    "message_length": len(request.message),
+                    "session_id": request.session_id
+                }
+            )
         
         # Process the message through the conversation manager
         response = await conversation_manager.process_message(request)
@@ -49,7 +69,8 @@ async def send_message(request: ChatRequest) -> ChatResponse:
             extra={
                 "user_id": request.user_id,
                 "response_type": response.detected_intent,
-                "session_id": request.session_id
+                "session_id": request.session_id,
+                "authenticated": current_user is not None
             }
         )
         
@@ -78,6 +99,7 @@ async def stream_message(request: ChatRequest) -> StreamingResponse:
 @router.get("/conversations/{user_id}")
 async def get_conversation_history(
     user_id: str,
+    current_user: CurrentUser,
     session_id: Optional[str] = None,
     limit: int = 20,
     offset: int = 0
@@ -86,13 +108,33 @@ async def get_conversation_history(
     Get conversation history for a user.
     
     Returns the conversation history, optionally filtered by session.
+    Requires authentication - users can only access their own conversations.
     """
     try:
+        # Security check: users can only access their own conversations
+        if current_user.user_id != user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: You can only access your own conversations"
+            )
+        
         conversation_manager = get_conversation_manager()
         
+        # If no session_id provided, return empty result for now
+        # In a full implementation, we'd list all sessions for the user
+        if not session_id:
+            return {
+                "user_id": user_id,
+                "session_id": None,
+                "conversations": None,
+                "limit": limit,
+                "offset": offset,
+                "message": "session_id parameter is required"
+            }
+        
         history = await conversation_manager.get_conversation_history(
-            user_id=user_id,
             session_id=session_id,
+            user_id=user_id,
             limit=limit,
             offset=offset
         )
@@ -113,6 +155,7 @@ async def get_conversation_history(
 @router.delete("/conversations/{user_id}")
 async def clear_conversation_history(
     user_id: str,
+    current_user: CurrentUser,
     session_id: Optional[str] = None,
     background_tasks: BackgroundTasks = BackgroundTasks()
 ) -> Dict[str, str]:
@@ -120,8 +163,16 @@ async def clear_conversation_history(
     Clear conversation history for a user.
     
     Optionally clear only a specific session.
+    Requires authentication - users can only clear their own conversations.
     """
     try:
+        # Security check: users can only clear their own conversations
+        if current_user.user_id != user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: You can only clear your own conversations"
+            )
+        
         conversation_manager = get_conversation_manager()
         
         # Add to background tasks for async processing
@@ -149,11 +200,12 @@ async def clear_conversation_history(
 
 
 @router.get("/intents")
-async def get_supported_intents() -> Dict[str, Any]:
+async def get_supported_intents(current_user: CurrentUser) -> Dict[str, Any]:
     """
     Get list of supported conversation intents.
     
     Returns information about what types of queries the assistant can handle.
+    Requires authentication.
     """
     intents = [
         {
