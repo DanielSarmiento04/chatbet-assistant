@@ -91,6 +91,11 @@ The demonstration includes:
 git clone <repository-url>
 cd chatbet-assistant
 
+# Configure Gemini API Key in backend docker-compose.yml
+# Edit chatbet-backend/docker-compose.yml and set your Gemini API key:
+# environment:
+#   - GOOGLE_API_KEY=your-actual-gemini-api-key-here
+
 # Start all services
 docker-compose up -d
 
@@ -99,6 +104,58 @@ docker-compose up -d
 # Backend API: http://localhost:8000
 # API Documentation: http://localhost:8000/docs
 ```
+
+### Docker Configuration
+
+#### Backend Docker Compose Configuration
+
+The backend service requires proper configuration of the Google Gemini API key in `chatbet-backend/docker-compose.yml`:
+
+```yaml
+services:
+  chatbet-api-backend:
+    image: chatbet-api-backend
+    container_name: chatbet-api-backend
+    build: ./backend/
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - GOOGLE_API_KEY=your-actual-gemini-api-key-here  # ⚠️ REQUIRED: Replace with your key
+      - GEMINI_MODEL=gemini-2.5-flash
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - SECRET_KEY=your-secret-key-for-development
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+      - CHATBET_API_BASE_URL=https://v46fnhvrjvtlrsmnismnwhdh5y0lckdl.lambda-url.us-east-1.on.aws
+    depends_on:
+      - redis
+    networks:
+      - chatbet-network
+```
+
+**⚠️ Important Configuration Steps:**
+
+1. **Get Gemini API Key**: 
+   - Visit [Google AI Studio](https://ai.google.dev/)
+   - Create an account and generate an API key
+   - Copy the API key for configuration
+
+2. **Configure Environment**:
+   ```bash
+   # Edit the backend docker-compose.yml file
+   nano chatbet-backend/docker-compose.yml
+   
+   # Replace the empty GOOGLE_API_KEY value:
+   - GOOGLE_API_KEY=your-actual-gemini-api-key-here
+   ```
+
+3. **Security Note**: 
+   - Never commit API keys to version control
+   - Use environment files (.env) for production deployments
+   - Consider using Docker secrets for production environments
 
 ### Option 2: Development Setup
 

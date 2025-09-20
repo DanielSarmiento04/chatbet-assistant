@@ -91,6 +91,11 @@ La demostración incluye:
 git clone <repository-url>
 cd chatbet-assistant
 
+# Configurar clave API Gemini en docker-compose.yml del backend
+# Editar chatbet-backend/docker-compose.yml y establecer tu clave API Gemini:
+# environment:
+#   - GOOGLE_API_KEY=tu-clave-api-gemini-real-aquí
+
 # Iniciar todos los servicios
 docker-compose up -d
 
@@ -99,6 +104,58 @@ docker-compose up -d
 # Backend API: http://localhost:8000
 # Documentación API: http://localhost:8000/docs
 ```
+
+### Configuración Docker
+
+#### Configuración Docker Compose del Backend
+
+El servicio backend requiere configuración apropiada de la clave API de Google Gemini en `chatbet-backend/docker-compose.yml`:
+
+```yaml
+services:
+  chatbet-api-backend:
+    image: chatbet-api-backend
+    container_name: chatbet-api-backend
+    build: ./backend/
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - GOOGLE_API_KEY=tu-clave-api-gemini-real-aquí  # ⚠️ REQUERIDO: Reemplazar con tu clave
+      - GEMINI_MODEL=gemini-2.5-flash
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - SECRET_KEY=tu-clave-secreta-para-desarrollo
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+      - CHATBET_API_BASE_URL=https://v46fnhvrjvtlrsmnismnwhdh5y0lckdl.lambda-url.us-east-1.on.aws
+    depends_on:
+      - redis
+    networks:
+      - chatbet-network
+```
+
+**⚠️ Pasos de Configuración Importantes:**
+
+1. **Obtener Clave API Gemini**: 
+   - Visita [Google AI Studio](https://ai.google.dev/)
+   - Crea una cuenta y genera una clave API
+   - Copia la clave API para configuración
+
+2. **Configurar Entorno**:
+   ```bash
+   # Editar el archivo docker-compose.yml del backend
+   nano chatbet-backend/docker-compose.yml
+   
+   # Reemplazar el valor vacío de GOOGLE_API_KEY:
+   - GOOGLE_API_KEY=tu-clave-api-gemini-real-aquí
+   ```
+
+3. **Nota de Seguridad**: 
+   - Nunca hagas commit de claves API al control de versiones
+   - Usa archivos de entorno (.env) para despliegues de producción
+   - Considera usar secretos de Docker para entornos de producción
 
 ### Opción 2: Configuración de Desarrollo
 
