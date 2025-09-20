@@ -39,6 +39,7 @@ export class WebSocketService {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private connectedSessionId: string | null = null;
+  private currentUserId: string | null = null; // Store generated user_id
   private streamingMessages = new Map<string, ChatMessage>(); // Track streaming messages by session_id
 
   // Connection state signals
@@ -85,8 +86,16 @@ export class WebSocketService {
     this.statusSignal.set(WebSocketStatus.CONNECTING);
     this.lastErrorSignal.set(null);
 
+    // Generate a random user_id if not already set
+    if (!this.currentUserId) {
+      this.currentUserId = this.generateRandomUserId();
+      if (environment.enableLogging) {
+        console.log('Generated random user_id:', this.currentUserId);
+      }
+    }
+
     try {
-      // Build WebSocket URL with auth token
+      // Build WebSocket URL with auth token and user_id
       const wsUrl = this.buildWebSocketUrl();
       this.socket = new WebSocket(wsUrl);
 
@@ -111,6 +120,7 @@ export class WebSocketService {
     this.statusSignal.set(WebSocketStatus.DISCONNECTED);
     this.connectionTimeSignal.set(null);
     this.connectedSessionId = null;
+    this.currentUserId = null; // Clear the generated user_id on disconnect
     this.reconnectAttempts = 0;
   }
 
@@ -124,12 +134,15 @@ export class WebSocketService {
 
     // Use the session_id from the WebSocket connection, not the one passed in
     const activeSessionId = this.connectedSessionId || sessionId;
+    
+    // Use the generated user_id or the provided one
+    const activeUserId = userId || this.currentUserId || this.generateRandomUserId();
 
     // Send message using backend WSUserMessage structure
     const message = {
       type: 'user_message',
       content,
-      user_id: userId,
+      user_id: activeUserId,
       timestamp: new Date().toISOString(),
       session_id: activeSessionId,
       message_id: generateUUID(),
@@ -153,6 +166,9 @@ export class WebSocketService {
 
     // Use the session_id from the WebSocket connection
     const activeSessionId = this.connectedSessionId || sessionId;
+    
+    // Use the generated user_id or the provided one
+    const activeUserId = userId || this.currentUserId || this.generateRandomUserId();
 
     // Send typing using backend WSTypingIndicator structure
     const message = {
@@ -209,14 +225,23 @@ export class WebSocketService {
   private buildWebSocketUrl(): string {
     const baseUrl = environment.wsUrl.replace('http', 'ws');
 
-    // Add user_id as query parameter if available
-    const userId = this.authService.userId();
-    if (userId) {
-      const separator = baseUrl.includes('?') ? '&' : '?';
-      return `${baseUrl}${separator}user_id=${encodeURIComponent(userId)}`;
+    // Use generated user_id or fallback to auth service
+    const userId = this.currentUserId || this.authService.userId() || this.generateRandomUserId();
+    
+    // Store the user_id for future use
+    if (!this.currentUserId) {
+      this.currentUserId = userId;
     }
 
-    return baseUrl;
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}user_id=${encodeURIComponent(userId)}`;
+  }
+
+  /**
+   * Generate a random user_id for anonymous connections
+   */
+  private generateRandomUserId(): string {
+    return `chatbet_user_${generateUUID()}`;
   }  /**
    * Setup socket event handlers
    */
@@ -529,6 +554,13 @@ export class WebSocketService {
   private getCurrentSessionId(): string | null {
     // Return the session ID assigned by the backend during connection
     return this.connectedSessionId;
+  }
+
+  /**
+   * Get the current user_id
+   */
+  getCurrentUserId(): string | null {
+    return this.currentUserId;
   }
 
   /**

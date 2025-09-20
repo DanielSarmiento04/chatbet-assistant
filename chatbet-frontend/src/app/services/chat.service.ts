@@ -143,8 +143,11 @@ export class ChatService {
       // Emit typing indicator
       this.setTyping(true);
 
-      // Get current user ID with fallback
-      const currentUserId = userId || this.authService.userId() || 'chatbet_user';
+      // Get current user ID with fallback to WebSocket service generated user_id
+      const currentUserId = userId ||
+                           this.authService.userId() ||
+                           this.webSocketService.getCurrentUserId() ||
+                           'chatbet_user';
       console.log('Sending WebSocket message with userId:', currentUserId);
 
       // Send message via WebSocket instead of HTTP API
@@ -188,10 +191,15 @@ export class ChatService {
     const sessionId = generateUUID();
     this.currentSessionIdSignal.set(sessionId);
 
+    // Get user_id from WebSocket service, auth service, or use provided one
+    const activeUserId = userId ||
+                        this.webSocketService.getCurrentUserId() ||
+                        this.authService.userId();
+
     // Create new conversation context
     const context: ConversationContext = {
       sessionId,
-      userId,
+      userId: activeUserId,
       createdAt: new Date(),
       lastActivity: new Date(),
       preferredTeams: [],
@@ -199,7 +207,7 @@ export class ChatService {
       language: 'en',
       mentionedTeams: [],
       mentionedMatches: [],
-      isAuthenticated: !!userId
+      isAuthenticated: !!activeUserId
     };
 
     this.conversationContextSignal.set(context);
@@ -279,6 +287,12 @@ export class ChatService {
    * Create a user message
    */
   private createUserMessage(content: string, sessionId: string, userId?: string): ChatMessage {
+    // Get the most appropriate user_id
+    const activeUserId = userId ||
+                        this.webSocketService.getCurrentUserId() ||
+                        this.authService.userId() ||
+                        'anonymous';
+
     return {
       id: generateUUID(),
       role: MessageRole.USER,
@@ -286,7 +300,7 @@ export class ChatService {
       timestamp: new Date(),
       messageType: MessageType.TEXT,
       sessionId,
-      userId,
+      userId: activeUserId,
       isLoading: false,
       hasError: false
     };
@@ -425,7 +439,7 @@ export class ChatService {
         try {
           // Check if this is an update to an existing message (for streaming)
           const existingMessageIndex = this.messagesSignal().findIndex(m => m.id === message.id);
-          
+
           if (existingMessageIndex >= 0) {
             // Update existing message (for streaming)
             this.messagesSignal.update(messages => {
@@ -447,7 +461,7 @@ export class ChatService {
           this.isProcessingSignal.set(false);
           this.setTyping(false);
 
-          // Emit message event  
+          // Emit message event
           this.messageSubject.next(message);
 
         } catch (error) {
