@@ -315,6 +315,8 @@ docker-compose down
 docker-compose up --build chatbet-backend
 ```
 
+Entra en el siguiente enlace [http://localhost/home](http://localhost/home)
+
 ## 🌐 Documentación API
 
 ### Endpoints Principales
