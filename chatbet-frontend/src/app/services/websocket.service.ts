@@ -68,10 +68,8 @@ export class WebSocketService {
   readonly system$ = this.systemSubject.asObservable();
 
   constructor() {
-    // Auto-connect if user is authenticated
-    if (this.authService.isAuthenticated()) {
-      this.connect();
-    }
+    // Note: Don't auto-connect here to avoid duplicate connections
+    // Connection will be initiated by components when needed
   }
 
   /**
@@ -121,16 +119,15 @@ export class WebSocketService {
       throw new Error('WebSocket not connected');
     }
 
-    const message: WebSocketMessage = {
-      type: 'message',
-      data: {
-        id: generateUUID(),
-        content,
-        sessionId,
-        userId,
-        timestamp: new Date().toISOString()
-      },
-      timestamp: new Date()
+    // Send message using backend WSUserMessage structure
+    const message = {
+      type: 'user_message',
+      content,
+      user_id: userId,
+      timestamp: new Date().toISOString(),
+      session_id: sessionId,
+      message_id: generateUUID(),
+      metadata: {}
     };
 
     this.sendWebSocketMessage(message);
@@ -144,15 +141,14 @@ export class WebSocketService {
       return;
     }
 
-    const message: WebSocketMessage = {
+    // Send typing using backend WSTypingIndicator structure
+    const message = {
       type: 'typing',
-      data: {
-        isTyping,
-        sessionId,
-        userId,
-        timestamp: new Date().toISOString()
-      },
-      timestamp: new Date()
+      is_typing: isTyping,
+      timestamp: new Date().toISOString(),
+      session_id: sessionId,
+      message_id: generateUUID(),
+      estimated_time_seconds: null
     };
 
     this.sendWebSocketMessage(message);
@@ -160,53 +156,38 @@ export class WebSocketService {
 
   /**
    * Join a specific session room
+   * Note: Session management is handled automatically by the backend
    */
   joinSession(sessionId: string): void {
-    if (!this.canSendMessages()) {
-      return;
+    // Backend handles session management automatically
+    // No explicit join message needed
+    if (environment.enableLogging) {
+      console.log('Session will be managed automatically by backend:', sessionId);
     }
-
-    const message: WebSocketMessage = {
-      type: 'connection',
-      data: { sessionId },
-      timestamp: new Date()
-    };
-
-    this.sendWebSocketMessage(message);
   }
 
   /**
    * Leave a session room
+   * Note: Session management is handled automatically by the backend
    */
   leaveSession(sessionId: string): void {
-    if (!this.canSendMessages()) {
-      return;
+    // Backend handles session management automatically
+    // No explicit leave message needed
+    if (environment.enableLogging) {
+      console.log('Session cleanup will be managed automatically by backend:', sessionId);
     }
-
-    const message: WebSocketMessage = {
-      type: 'disconnect',
-      data: { sessionId },
-      timestamp: new Date()
-    };
-
-    this.sendWebSocketMessage(message);
   }
 
   /**
    * Request conversation history
+   * Note: History requests may be handled through HTTP API instead
    */
   requestHistory(sessionId: string, limit = 20): void {
-    if (!this.canSendMessages()) {
-      return;
+    // TODO: Implement history request through appropriate backend endpoint
+    // Backend may handle history through HTTP API or dedicated WebSocket message type
+    if (environment.enableLogging) {
+      console.log('History request for session:', sessionId, 'limit:', limit);
     }
-
-    const message: WebSocketMessage = {
-      type: 'message',
-      data: { sessionId, limit },
-      timestamp: new Date()
-    };
-
-    this.sendWebSocketMessage(message);
   }
 
   /**
@@ -346,7 +327,7 @@ export class WebSocketService {
   /**
    * Send message through WebSocket
    */
-  private sendWebSocketMessage(message: WebSocketMessage): void {
+  private sendWebSocketMessage(message: WebSocketMessage | any): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(message));
     }
@@ -399,13 +380,25 @@ export class WebSocketService {
   private startHeartbeat(): void {
     this.heartbeatTimer = setInterval(() => {
       if (this.socket?.readyState === WebSocket.OPEN) {
-        // Send simple ping message
+        // Send ping message with required fields to match backend WSPing model
+        const sessionId = this.getCurrentSessionId();
         this.socket.send(JSON.stringify({
           type: 'ping',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          session_id: sessionId || 'heartbeat',
+          message_id: generateUUID()
         }));
       }
     }, environment.websocket.heartbeatInterval);
+  }
+
+  /**
+   * Get current session ID (we might need to track this)
+   */
+  private getCurrentSessionId(): string | null {
+    // For now, return a default session ID
+    // In the future, this should track the actual session
+    return 'default-session';
   }
 
   /**

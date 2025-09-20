@@ -15,6 +15,8 @@ import {
   CreateMessagePayload
 } from '../models';
 import { ApiService } from './api.service';
+import { WebSocketService } from './websocket.service';
+import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
 /**
@@ -26,6 +28,8 @@ import { environment } from '../../environments/environment';
 })
 export class ChatService {
   private readonly apiService = inject(ApiService);
+  private readonly webSocketService = inject(WebSocketService);
+  private readonly authService = inject(AuthService);
 
   // Core conversation state signals
   private readonly messagesSignal = signal<ChatMessage[]>([]);
@@ -98,6 +102,9 @@ export class ChatService {
 
     // Set up error clearing on successful operations
     this.setupErrorClearing();
+
+    // Set up WebSocket message listeners
+    this.setupWebSocketListeners();
   }
 
   /**
@@ -105,6 +112,12 @@ export class ChatService {
    */
   async sendMessage(content: string, userId?: string): Promise<void> {
     if (!this.canSendMessage() || !content.trim()) {
+      return;
+    }
+
+    // Check WebSocket connection
+    if (!this.webSocketService.isConnected()) {
+      this.lastErrorSignal.set('Not connected to chat service');
       return;
     }
 
@@ -125,30 +138,14 @@ export class ChatService {
       // Emit typing indicator
       this.setTyping(true);
 
-      // Prepare API request
-      const request: ChatRequest = {
-        message: content,
-        sessionId,
-        userId,
-        includeContext: true
-      };
+      // Get current user ID
+      const currentUserId = userId || this.authService.userId() || 'anonymous';
 
-      // Send to API
-      const response = await this.apiService.chat.sendMessage(request).toPromise();
+      // Send message via WebSocket instead of HTTP API
+      this.webSocketService.sendMessage(content, sessionId, currentUserId);
 
-      if (response) {
-        // Create assistant message from response
-        const assistantMessage = this.createAssistantMessage(response, sessionId);
-        this.addMessage(assistantMessage);
-
-        // Update suggested prompts if provided
-        if (response.suggestedActions.length > 0) {
-          this.suggestedPromptsSignal.set(response.suggestedActions);
-        }
-
-        // Emit message event
-        this.messageSubject.next(assistantMessage);
-      }
+      // Note: Response will come through WebSocket message handler
+      // We'll set up a listener for WebSocket responses
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
@@ -158,7 +155,6 @@ export class ChatService {
       const errorMessageObj = this.createErrorMessage(errorMessage, sessionId);
       this.addMessage(errorMessageObj);
 
-    } finally {
       this.isProcessingSignal.set(false);
       this.setTyping(false);
     }
@@ -410,6 +406,87 @@ export class ChatService {
         this.lastErrorSignal.set(null);
       }
     });
+  }
+
+  /**
+   * Set up WebSocket message listeners for real-time chat
+   */
+  private setupWebSocketListeners(): void {
+    // Listen for incoming messages from WebSocket
+    this.webSocketService.message$.subscribe({
+      next: (message) => {
+        try {
+          const sessionId = this.currentSessionIdSignal();
+          
+          // Create assistant message from WebSocket response
+          const assistantMessage: ChatMessage = {
+            id: generateUUID(),
+            role: MessageRole.ASSISTANT,
+            content: message.content,
+            timestamp: new Date(),
+            messageType: MessageType.TEXT,
+            sessionId: sessionId || undefined,
+            responseTimeMs: 0 // WebSocket doesn't track this
+          };
+
+          // Add message to conversation
+          this.addMessage(assistantMessage);
+
+          // Clear processing state
+          this.isProcessingSignal.set(false);
+          this.setTyping(false);
+
+          // Emit message event
+          this.messageSubject.next(assistantMessage);
+
+        } catch (error) {
+          console.error('Error handling WebSocket message:', error);
+          this.handleWebSocketError('Failed to process message');
+        }
+      },
+      error: (error) => {
+        console.error('WebSocket message error:', error);
+        this.handleWebSocketError('Connection error');
+      }
+    });
+
+    // Listen for typing indicators
+    this.webSocketService.typing$.subscribe({
+      next: (typingIndicator) => {
+        this.setTyping(typingIndicator.isTyping);
+      },
+      error: (error) => {
+        console.error('WebSocket typing error:', error);
+      }
+    });
+
+    // Listen for system messages (errors, connection status, etc.)
+    this.webSocketService.system$.subscribe({
+      next: (systemMessage) => {
+        if (systemMessage.type === 'error') {
+          this.handleWebSocketError(systemMessage.data as string);
+        }
+      },
+      error: (error) => {
+        console.error('WebSocket system error:', error);
+      }
+    });
+  }
+
+  /**
+   * Handle WebSocket errors
+   */
+  private handleWebSocketError(errorMessage: string): void {
+    this.lastErrorSignal.set(errorMessage);
+    this.isProcessingSignal.set(false);
+    this.setTyping(false);
+
+    // Add error message to conversation
+    const sessionId = this.currentSessionIdSignal();
+    if (sessionId) {
+      const errorMessageObj = this.createErrorMessage(errorMessage, sessionId);
+      this.addMessage(errorMessageObj);
+    }
   }
 
   /**

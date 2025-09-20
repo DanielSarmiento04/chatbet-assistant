@@ -85,8 +85,13 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
   private async initializeConnection(): Promise<void> {
     try {
       console.log('isAuthenticated:', this.authService.isAuthenticated());
-      if (this.authService.isAuthenticated()) {
+      
+      // Only connect if authenticated and not already connected/connecting
+      if (this.authService.isAuthenticated() && !this.webSocketService.isConnected() && !this.webSocketService.isConnecting()) {
+        console.log('Initiating WebSocket connection...');
         this.webSocketService.connect();
+      } else {
+        console.log('WebSocket connection not needed or already in progress');
       }
     } catch (error) {
       console.error('Failed to initialize connection:', error);
