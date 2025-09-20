@@ -126,6 +126,17 @@ async def websocket_chat_endpoint(
         # Register message handlers
         async def handle_user_message(session_id: str, message: WSUserMessage):
             """Handle incoming user chat messages."""
+            logger.info(
+                f"WebSocket handler received user message",
+                extra={
+                    "session_id": session_id,
+                    "user_id": message.user_id,
+                    "message_id": message.message_id,
+                    "content": message.content[:50] + "..." if len(message.content) > 50 else message.content,
+                    "handler_call_timestamp": datetime.now().isoformat()
+                }
+            )
+            
             try:
                 # Send typing indicator
                 await connection_manager.send_typing_indicator(session_id, True, estimated_time=3)

@@ -16,7 +16,7 @@ Why LangChain? It gives us:
 
 import logging
 from typing import Dict, List, Optional, Any, Tuple, AsyncGenerator, cast
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 from uuid import uuid4
 
@@ -65,6 +65,10 @@ class ConversationManager:
         # Session storage (in production, use Redis)
         self.sessions: Dict[str, Conversation] = {}
         self.memories: Dict[str, InMemoryChatMessageHistory] = {}
+        
+        # Message deduplication tracking (user_message_hash -> timestamp)
+        self.processed_user_messages: Dict[str, datetime] = {}
+        self.dedup_window_minutes = 0.03  # Prevent same message processing within 2 seconds
         
         # Performance tracking
         self._total_conversations = 0
@@ -408,14 +412,87 @@ Just ask me anything about sports betting, and I'll help you make informed decis
         This is the main entry point for message processing.
         """
         start_time = datetime.now()
+        message_id = str(uuid4())
+        
+        logger.info(
+            f"Processing message for session {request.session_id}",
+            extra={
+                "session_id": request.session_id,
+                "user_id": request.user_id,
+                "message_id": message_id,
+                "message_content": request.message[:50] + "..." if len(request.message) > 50 else request.message,
+                "message_length": len(request.message)
+            }
+        )
+        
+        # Create a hash for message deduplication (session + message content)
+        import hashlib
+        message_hash = hashlib.md5(f"{request.session_id}:{request.message}".encode()).hexdigest()
+        current_time = datetime.now()
+        
+        # Check if we've processed this exact message recently
+        if message_hash in self.processed_user_messages:
+            last_processed = self.processed_user_messages[message_hash]
+            time_diff = (current_time - last_processed).total_seconds() / 60  # minutes
+            
+            if time_diff < self.dedup_window_minutes:
+                logger.warning(
+                    f"Duplicate message detected and blocked",
+                    extra={
+                        "session_id": request.session_id,
+                        "user_id": request.user_id,
+                        "message_hash": message_hash,
+                        "message_content": request.message[:50],
+                        "last_processed": last_processed.isoformat(),
+                        "time_diff_seconds": time_diff * 60
+                    }
+                )
+                # Return a polite acknowledgment instead of processing again
+                return ChatResponse(
+                    message="I'm still processing your previous message. Please wait a moment.",
+                    session_id=request.session_id or str(uuid4()),
+                    message_id=message_id,
+                    response_time_ms=10,
+                    token_count=0,
+                    detected_intent=IntentType.GENERAL_SPORTS_QUERY,
+                    intent_confidence=1.0,
+                    function_calls_made=[],
+                    suggested_actions=[]
+                )
+        
+        # Mark message as being processed
+        self.processed_user_messages[message_hash] = current_time
+        
+        # Clean up old processed messages to prevent memory leaks
+        cutoff_time = current_time - timedelta(minutes=self.dedup_window_minutes * 2)
+        messages_to_remove = [
+            hash_key for hash_key, timestamp in self.processed_user_messages.items()
+            if timestamp < cutoff_time
+        ]
+        for hash_key in messages_to_remove:
+            del self.processed_user_messages[hash_key]
         
         try:
+            # Ensure we have a valid session ID
+            session_id = request.session_id or str(uuid4())
+            
             # Get or create conversation
             conversation = await self.start_conversation(
                 user_id=request.user_id,
-                session_id=request.session_id
+                session_id=session_id
             )
             history = self.memories[conversation.id]
+            
+            # Log message processing start
+            logger.info(
+                f"Processing message for session {conversation.id}",
+                extra={
+                    "session_id": conversation.id,
+                    "user_id": request.user_id,
+                    "message_preview": request.message[:50] + "..." if len(request.message) > 50 else request.message,
+                    "conversation_length": len(conversation.messages)
+                }
+            )
             
             # Classify user intent first
             intent_result = await self.llm_service.classify_intent(request.message)
@@ -484,6 +561,21 @@ Just ask me anything about sports betting, and I'll help you make informed decis
             # Generate suggested actions based on intent
             suggested_actions = self._generate_suggested_actions(intent_result.intent)
             
+            # Log response generation completion
+            logger.info(
+                f"Generated response for session {conversation.id}",
+                extra={
+                    "session_id": conversation.id,
+                    "user_id": request.user_id,
+                    "message_id": message_id,
+                    "response_time_ms": response_time_ms,
+                    "response_length": len(response_content),
+                    "detected_intent": str(intent_result.intent) if intent_result.intent else None,
+                    "intent_confidence": intent_result.confidence,
+                    "suggested_actions_count": len(suggested_actions)
+                }
+            )
+            
             return ChatResponse(
                 message=response_content,
                 session_id=conversation.id,
@@ -519,10 +611,13 @@ Just ask me anything about sports betting, and I'll help you make informed decis
         Yields response chunks for real-time experience.
         """
         try:
+            # Ensure we have a valid session ID
+            session_id = request.session_id or str(uuid4())
+            
             # Get or create conversation
             conversation = await self.start_conversation(
                 user_id=request.user_id,
-                session_id=request.session_id
+                session_id=session_id
             )
             
             # Create chat message
@@ -667,10 +762,13 @@ Just ask me anything about sports betting, and I'll help you make informed decis
         start_time = datetime.now()
         
         try:
+            # Ensure we have a valid session ID
+            session_id = request.session_id or str(uuid4())
+            
             # Get or create conversation
             conversation = await self.start_conversation(
                 user_id=request.user_id,
-                session_id=request.session_id
+                session_id=session_id
             )
             history = self.memories[conversation.id]
             

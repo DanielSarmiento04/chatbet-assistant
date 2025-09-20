@@ -186,6 +186,64 @@ docker run -p 8000:8000 --env-file .env chatbet-backend
 3. Update documentation for API changes
 4. Ensure all tests pass before submitting
 
+## Known Issues and Solutions
+
+### Multiple WebSocket Responses Issue
+
+**Problem**: ChatBet sending multiple responses to a single user message (e.g., "hi" generating 3 different responses).
+
+**Root Causes**:
+1. **Multiple WebSocket Connections**: Frontend connecting to both `/ws/chat` and `/ws/chat/{session_id}` endpoints
+2. **Session ID Conflicts**: Same session ID used across multiple connections
+3. **Message Duplication**: Same message processed multiple times due to race conditions
+4. **Null Session Handling**: `session_id` being `None` causing processing issues
+
+**Solutions Implemented**:
+
+#### 1. WebSocket Level Deduplication
+- **Message ID Tracking**: Each message gets a unique ID and is tracked to prevent duplicate processing
+- **Connection Conflict Resolution**: New connections automatically close existing connections with the same session ID
+- **10-minute cleanup window**: Old processed message IDs are automatically cleaned up
+
+#### 2. Conversation Level Deduplication
+- **Content-based Hashing**: Messages are hashed based on content, user ID, and session ID
+- **2-second processing window**: Same message content blocked if received within 2 seconds
+- **Graceful acknowledgment**: Returns "still processing" message instead of generating new response
+
+#### 3. Session ID Handling
+- **Automatic Generation**: `None` or empty session IDs are automatically replaced with UUIDs
+- **Consistent Usage**: All methods ensure valid session IDs before processing
+
+#### 4. Enhanced Logging
+- **Processing Tracking**: Detailed logs for message processing start/completion
+- **Duplicate Detection**: Warning logs when duplicates are detected and blocked
+- **Performance Metrics**: Response time and content length tracking
+
+**Configuration**:
+```python
+# WebSocket Manager
+self.message_cleanup_interval = timedelta(minutes=10)
+
+# Conversation Manager  
+self.dedup_window_minutes = 0.03  # 2 seconds in decimal minutes
+```
+
+**Testing**:
+- Use `test_websocket_deduplication.py` to verify WebSocket-level fixes
+- Use `test_session_id.py` to verify session ID handling
+- Monitor logs for "Duplicate message detected and blocked" warnings
+
+**Frontend Recommendations**:
+1. **Single Connection**: Connect to only one WebSocket endpoint (either `/ws/chat` or `/ws/chat/{session_id}`)
+2. **Unique Message IDs**: Ensure each message has a unique `message_id` 
+3. **Session Management**: Maintain consistent session IDs across page reloads
+4. **Error Handling**: Handle "still processing" responses gracefully
+
+### WebSocket Connection Management
+- Only one active connection per session ID is allowed
+- Existing connections are automatically closed when a new connection uses the same session ID
+- Message processing includes deduplication to prevent multiple responses
+
 ## License
 
 This project is part of a technical assessment.

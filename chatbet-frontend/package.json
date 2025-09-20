@@ -1,16 +1,15 @@
 {
   "name": "chatbet-frontend",
   "version": "0.0.0",
-  "packageManager": "bun@1.1.0",
-  "scripts": {
+   "scripts": {
     "ng": "ng",
-    "start": "bun run ng serve",
-    "build": "bun run ng build",
-    "build:prod": "bun run ng build --configuration production",
-    "watch": "bun run ng build --watch --configuration development",
-    "test": "bun run ng test",
-    "lint": "bun run ng lint",
-    "serve:ssr": "bun run node dist/chatbet-frontend/server/server.mjs"
+    "start": "ng serve",
+    "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "lint": "ng lint",
+    "serve:ssr": "node dist/chatbet-frontend/server/server.mjs"
   },
   "private": true,
   "dependencies": {

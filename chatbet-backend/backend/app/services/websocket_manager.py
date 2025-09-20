@@ -77,6 +77,10 @@ class WebSocketConnectionManager:
         # User to sessions mapping for multi-device support
         self.user_sessions: Dict[str, Set[str]] = defaultdict(set)
         
+        # Message deduplication tracking
+        self.processed_messages: Dict[str, datetime] = {}
+        self.message_cleanup_interval = timedelta(minutes=10)
+        
         # Background tasks
         self.background_tasks: Set[asyncio.Task] = set()
         
@@ -116,6 +120,32 @@ class WebSocketConnectionManager:
             # Accept the WebSocket connection
             await websocket.accept()
             
+            # Check if session already exists and handle connection conflict
+            if session_id in self.connections:
+                existing_connection = self.connections[session_id]
+                logger.warning(
+                    f"Session conflict detected - closing existing connection",
+                    extra={
+                        "session_id": session_id,
+                        "existing_user_id": existing_connection.user_id,
+                        "new_user_id": user_id,
+                        "existing_connection_age": existing_connection.connection_duration.total_seconds()
+                    }
+                )
+                
+                # Close the existing connection
+                try:
+                    await existing_connection.websocket.close(
+                        code=4001, 
+                        reason="Connection replaced by new session"
+                    )
+                except Exception as e:
+                    logger.warning(f"Error closing existing connection: {e}")
+                
+                # Remove from user sessions mapping if needed
+                if existing_connection.user_id:
+                    self.user_sessions[existing_connection.user_id].discard(session_id)
+            
             # Create connection info
             connection_info = ConnectionInfo(websocket, session_id, user_id)
             
@@ -134,7 +164,8 @@ class WebSocketConnectionManager:
                 extra={
                     "session_id": session_id,
                     "user_id": user_id,
-                    "total_connections": len(self.connections)
+                    "total_connections": len(self.connections),
+                    "replaced_existing": session_id in self.connections
                 }
             )
             
@@ -311,18 +342,48 @@ class WebSocketConnectionManager:
         """
         if session_id not in self.connections:
             return False
-        
+
         connection_info = self.connections[session_id]
-        
+
         try:
             # Parse the message
             message = parse_websocket_message(message_data)
             
+            # Check for message deduplication (only for user messages)
+            if hasattr(message, 'message_id') and message.message_id:
+                message_id = message.message_id
+                current_time = datetime.utcnow()
+                
+                # Check if we've already processed this message
+                if message_id in self.processed_messages:
+                    logger.warning(
+                        f"Duplicate message detected and ignored",
+                        extra={
+                            "session_id": session_id,
+                            "message_id": message_id,
+                            "original_time": self.processed_messages[message_id].isoformat(),
+                            "duplicate_time": current_time.isoformat()
+                        }
+                    )
+                    return False
+                
+                # Mark message as processed
+                self.processed_messages[message_id] = current_time
+                
+                # Clean up old processed messages to prevent memory leaks
+                cutoff_time = current_time - self.message_cleanup_interval
+                messages_to_remove = [
+                    mid for mid, timestamp in self.processed_messages.items()
+                    if timestamp < cutoff_time
+                ]
+                for mid in messages_to_remove:
+                    del self.processed_messages[mid]
+
             # Update connection activity and stats
             connection_info.update_activity()
             connection_info.increment_message_count()
             self.total_messages += 1
-            
+
             # Call registered handlers for this message type
             handlers = self.message_handlers.get(message.type, [])
             for handler in handlers:
@@ -330,18 +391,19 @@ class WebSocketConnectionManager:
                     await handler(session_id, message)
                 except Exception as e:
                     logger.error(f"Error in message handler: {e}")
-            
+
             logger.debug(
                 f"User message handled",
                 extra={
                     "session_id": session_id,
                     "message_type": message.type,
+                    "message_id": getattr(message, 'message_id', None),
                     "content_length": len(getattr(message, 'content', ''))
                 }
             )
-            
+
             return True
-            
+
         except ValidationError as e:
             logger.warning(f"Invalid message format from session {session_id}: {e}")
             await self.send_error(session_id, "INVALID_MESSAGE_FORMAT", str(e))
