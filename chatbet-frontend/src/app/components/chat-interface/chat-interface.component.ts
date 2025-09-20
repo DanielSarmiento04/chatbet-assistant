@@ -218,18 +218,57 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
     const now = new Date();
     const messageDate = new Date(timestamp);
-    const diffInMinutes = Math.floor((now.getTime() - messageDate.getTime()) / (1000 * 60));
+    
+    // Handle invalid dates
+    if (isNaN(messageDate.getTime())) {
+      console.warn('Invalid timestamp provided:', timestamp);
+      return '';
+    }
 
+    const diffInMs = now.getTime() - messageDate.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    // Handle future timestamps (clock skew)
+    if (diffInMs < 0) {
+      return 'Just now';
+    }
+
+    // Less than 1 minute
     if (diffInMinutes < 1) {
       return 'Just now';
-    } else if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    } else if (diffInMinutes < 1440) { // 24 hours
-      const hours = Math.floor(diffInMinutes / 60);
-      return `${hours}h ago`;
-    } else {
-      return messageDate.toLocaleDateString();
     }
+    
+    // Less than 1 hour
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes}m ago`;
+    }
+    
+    // Less than 24 hours (same day)
+    if (diffInHours < 24 && messageDate.getDate() === now.getDate()) {
+      return `${diffInHours}h ago`;
+    }
+    
+    // Yesterday
+    if (diffInDays === 1) {
+      return `Yesterday ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    
+    // Within a week
+    if (diffInDays < 7) {
+      const dayName = messageDate.toLocaleDateString([], { weekday: 'short' });
+      const time = messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return `${dayName} ${time}`;
+    }
+    
+    // More than a week ago
+    return messageDate.toLocaleDateString([], { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   // Scroll event handler to disable auto-scroll when user scrolls up
@@ -246,7 +285,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
     // Set user scrolling flag when user scrolls manually
     this.isUserScrolling.set(true);
-    
+
     // Clear existing timeout
     if (this.scrollTimeoutId) {
       clearTimeout(this.scrollTimeoutId);
@@ -261,7 +300,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     const scrollHeight = element.scrollHeight;
     const scrollTop = element.scrollTop;
     const clientHeight = element.clientHeight;
-    
+
     this.shouldScrollToBottom.set(
       scrollTop + clientHeight >= scrollHeight - 10
     );

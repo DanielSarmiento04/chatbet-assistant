@@ -17,33 +17,182 @@ This backend is built using enterprise-level patterns with a focus on scalabilit
 
 ### Project Structure
 
+# ChatBet Assistant Backend
+
+A FastAPI-based conversational AI backend for sports betting insights and recommendations.
+
+## Overview
+
+ChatBet Assistant is an intelligent conversational API that provides real-time sports betting information, odds analysis, and betting recommendations. Built with FastAPI, it integrates with external sports APIs and uses Google Gemini AI for natural language processing.
+
+## Features
+
+- Real-time sports data integration
+- Betting odds analysis and recommendations
+- WebSocket support for live chat
+- Intent classification and conversation management
+- Tournament and fixture information
+- User authentication and session management
+- Comprehensive error handling and fallback responses
+
+## Technology Stack
+
+- **Framework**: FastAPI
+- **AI/LLM**: Google Gemini AI
+- **Language**: Python 3.11+
+- **Database**: Redis (for caching)
+- **WebSocket**: FastAPI WebSocket support
+- **External API**: ChatBet Sports API
+- **Deployment**: Docker
+
+## Project Structure
+
 ```
 backend/
 ├── app/
-│   ├── api/                 # FastAPI route handlers
-│   │   ├── chat.py         # Chat endpoints
-│   │   └── health.py       # Health check endpoints
-│   ├── core/               # Core configuration and utilities
-│   │   ├── config.py       # Application settings
-│   │   ├── logging.py      # Structured logging setup
-│   │   └── security.py     # Authentication and security
-│   ├── models/             # Pydantic data models
-│   │   ├── api_models.py   # External API models
-│   │   ├── betting.py      # Betting-related models
-│   │   └── conversation.py # Conversation models
+│   ├── api/                 # API route handlers
+│   ├── core/               # Core functionality (config, auth, logging)
+│   ├── models/             # Pydantic models
 │   ├── services/           # Business logic services
-│   │   ├── chatbet_api.py  # External API integration
-│   │   ├── conversation_manager.py # Conversation orchestration
-│   │   └── llm_service.py  # AI/LLM integration
-│   ├── utils/              # Utility modules
-│   │   ├── cache.py        # Redis caching utilities
-│   │   ├── exceptions.py   # Custom exception handling
-│   │   └── parsers.py      # Text parsing and entity extraction
-│   └── main.py             # FastAPI application entry point
-├── Dockerfile              # Container configuration
+│   ├── routes/             # Legacy route handlers
+│   └── utils/              # Utility functions
+├── Dockerfile              # Docker configuration
 ├── requirements.txt        # Python dependencies
-└── README.md              # This file
+├── main.py                # Application entry point
+└── start.sh               # Development startup script
 ```
+
+## Installation
+
+### Prerequisites
+
+- Python 3.11 or higher
+- Redis server
+- Google AI API key
+
+### Setup
+
+1. Clone the repository
+2. Navigate to the backend directory
+3. Run the setup script:
+
+```bash
+chmod +x setup-env.sh
+./setup-env.sh
+```
+
+4. Create a `.env` file with your configuration:
+
+```bash
+GOOGLE_API_KEY=your_google_ai_api_key
+REDIS_HOST=localhost
+REDIS_PORT=6379
+DEBUG=true
+ENVIRONMENT=development
+```
+
+5. Start the development server:
+
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+## API Endpoints
+
+### REST API
+
+- `GET /` - API information
+- `GET /health/` - Health check
+- `POST /api/v1/chat/message` - Send chat message
+- `GET /api/v1/chat/history/{session_id}` - Get conversation history
+
+### WebSocket
+
+- `ws://localhost:8000/ws/chat` - Real-time chat
+- `ws://localhost:8000/ws/sports-updates` - Live sports updates
+- `ws://localhost:8000/ws/test` - WebSocket test page
+
+## Usage
+
+### REST API Example
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/chat/message" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What are today'\''s Premier League matches?",
+    "user_id": "user123",
+    "session_id": "session456"
+  }'
+```
+
+### WebSocket Example
+
+Connect to `ws://localhost:8000/ws/chat` and send:
+
+```json
+{
+  "type": "user_message",
+  "content": "Show me Champions League fixtures",
+  "session_id": "your-session-id",
+  "user_id": "your-user-id"
+}
+```
+
+## Configuration
+
+Key configuration options in `.env`:
+
+- `GOOGLE_API_KEY` - Google AI API key (required)
+- `CHATBET_API_BASE_URL` - External sports API URL
+- `REDIS_HOST` - Redis server host
+- `DEBUG` - Enable debug mode
+- `CORS_ORIGINS` - Allowed CORS origins
+
+## Development
+
+### Running Tests
+
+```bash
+python -m pytest test_basic.py
+python test_conversation_fix.py
+```
+
+### Code Structure
+
+- **Services**: Business logic separated into focused services
+- **Models**: Pydantic models for type safety and validation
+- **API Layers**: Clean separation between REST and WebSocket APIs
+- **Error Handling**: Comprehensive error handling with fallback responses
+
+## Docker Deployment
+
+```bash
+docker build -t chatbet-backend .
+docker run -p 8000:8000 --env-file .env chatbet-backend
+```
+
+## Monitoring
+
+- Health endpoint: `GET /health/ping`
+- WebSocket status: `GET /ws/status`
+- Performance metrics available through logging
+
+## Contributing
+
+1. Follow Python PEP 8 style guidelines
+2. Add tests for new features
+3. Update documentation for API changes
+4. Ensure all tests pass before submitting
+
+## License
+
+This project is part of a technical assessment.
+
+## Support
+
+For issues and questions, refer to the code documentation and error logs.
 
 ## 🚀 Features
 
@@ -241,7 +390,7 @@ Uses LangChain's ConversationBufferWindowMemory to maintain context:
 | `ENVIRONMENT` | Runtime environment | `development` |
 | `DEBUG` | Enable debug mode | `false` |
 | `GOOGLE_API_KEY` | Google AI API key | Required |
-| `GEMINI_MODEL` | Gemini model to use | `gemini-2.0-flash-exp` |
+| `GEMINI_MODEL` | Gemini model to use | `gemini-2.0-flash` |
 | `REDIS_HOST` | Redis server host | `localhost` |
 | `REDIS_PORT` | Redis server port | `6379` |
 | `CACHE_TTL_TOURNAMENTS` | Tournament cache TTL (seconds) | `86400` |
@@ -363,17 +512,6 @@ DEBUG=true
 LOG_LEVEL=DEBUG
 ```
 
-## 🤝 Contributing
-
-1. Follow the existing code structure and patterns
-2. Add comprehensive tests for new features
-3. Update documentation for API changes
-4. Use type hints throughout the codebase
-5. Follow PEP 8 coding standards
-
-## 📄 License
-
-This project is part of the ChatBet Technical Assessment and follows enterprise-level development practices.
 
 ## 🔗 Related Documentation
 
