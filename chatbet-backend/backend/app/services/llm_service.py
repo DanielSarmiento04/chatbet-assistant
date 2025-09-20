@@ -295,12 +295,24 @@ Be accurate and confident in your classifications. Consider context and user int
                     }]
                 
                 api_client = await get_api_client()
-                odds = await api_client.get_odds(
-                    sport_id=sport_id,
-                    tournament_id=tournament_id,
-                    fixture_id=fixture_id,
-                    amount=amount
-                )
+                
+                async def _get_odds_api_call():
+                    return await api_client.get_odds(
+                        sport_id=sport_id,
+                        tournament_id=tournament_id,
+                        fixture_id=fixture_id,
+                        amount=amount
+                    )
+                
+                odds_result = await _retry_api_call(_get_odds_api_call)
+                
+                # Check if retry returned an error response
+                if isinstance(odds_result, list) and len(odds_result) > 0:
+                    first_item = odds_result[0]
+                    if isinstance(first_item, dict) and first_item.get("status") == "error":
+                        return odds_result
+                
+                odds = odds_result
                 
                 if not odds:
                     return [{
