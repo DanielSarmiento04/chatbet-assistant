@@ -218,7 +218,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
     const now = new Date();
     const messageDate = new Date(timestamp);
-    
+
     // Handle invalid dates
     if (isNaN(messageDate.getTime())) {
       console.warn('Invalid timestamp provided:', timestamp);
@@ -239,32 +239,32 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     if (diffInMinutes < 1) {
       return 'Just now';
     }
-    
+
     // Less than 1 hour
     if (diffInMinutes < 60) {
       return `${diffInMinutes}m ago`;
     }
-    
+
     // Less than 24 hours (same day)
     if (diffInHours < 24 && messageDate.getDate() === now.getDate()) {
       return `${diffInHours}h ago`;
     }
-    
+
     // Yesterday
     if (diffInDays === 1) {
       return `Yesterday ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
-    
+
     // Within a week
     if (diffInDays < 7) {
       const dayName = messageDate.toLocaleDateString([], { weekday: 'short' });
       const time = messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       return `${dayName} ${time}`;
     }
-    
+
     // More than a week ago
-    return messageDate.toLocaleDateString([], { 
-      month: 'short', 
+    return messageDate.toLocaleDateString([], {
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'

@@ -1,434 +1,268 @@
 # ChatBet Frontend
 
-A modern, real-time sports betting conversational interface built with Angular 19 and Material Design. ChatBet provides an intuitive chat experience for sports betting inquiries, odds checking, and match information.
+This is a chat interface where you can talk to a bot about sports betting. It's built with Angular 19 and looks pretty modern thanks to Material Design.
 
-![Angular](https://img.shields.io/badge/Angular-19.0-red)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)
-![Material](https://img.shields.io/badge/Material-19.2-green)
-![WebSocket](https://img.shields.io/badge/WebSocket-Real--time-orange)
+## What it does
 
-## 🚀 Features
+**The main thing:** You chat with a bot that knows about sports betting. Ask it about odds, matches, or how to place bets.
 
-### Core Functionality
-- **Real-time Chat Interface** - Instant messaging with WebSocket connectivity
-- **Sports Betting Assistant** - AI-powered conversational betting guidance
-- **Live Odds Integration** - Real-time sports odds and match information
-- **Authentication System** - Secure user authentication and session management
-- **Responsive Design** - Mobile-first responsive UI with Material Design
+**Chat stuff that works:**
+- Messages appear instantly (WebSocket connection)
+- The page scrolls down automatically when new messages come in (but stops if you're scrolling up)
+- You can see when the bot is typing
+- Messages look nice with bold text and lists
+- Your conversation history stays there
+- If something breaks, it tells you what went wrong
 
-### Chat Features
-- **Smart Auto-scroll** - Intelligent scroll management with user interaction detection
-- **Typing Indicators** - Real-time typing status from the bot
-- **Message Formatting** - Rich text support with markdown rendering
-- **Quick Actions** - Pre-defined prompts for common queries
-- **Message History** - Persistent conversation history
-- **Error Handling** - Graceful error states and retry mechanisms
+**Other useful things:**
+- Works on your phone
+- Shows if you're connected or not
+- Looks good in both light and dark mode
+- You can navigate with just your keyboard
 
-### UI/UX Features
-- **Material Design 3** - Modern Google Material Design theming
-- **Dark/Light Theme** - Automatic theme switching
-- **Connection Status** - Visual WebSocket connection indicators
-- **Loading States** - Smooth loading animations and progress indicators
-- **Accessibility** - WCAG compliant with keyboard navigation support
+## How it's built
 
-## 🏗️ Architecture
+**What we used:**
+- Angular 19 (the latest version with standalone components)
+- Angular Material for the UI (Google's design system)
+- WebSocket for real-time chat
+- TypeScript because plain JavaScript gets messy
+- Bun instead of npm (it's faster)
 
-### Technology Stack
-- **Framework**: Angular 19 (Standalone Components)
-- **UI Library**: Angular Material 19.2
-- **State Management**: Angular Signals (Modern Reactive State)
-- **Real-time Communication**: WebSocket with Socket.IO
-- **Styling**: SCSS with Material Design tokens
-- **Package Manager**: Bun (Fast JavaScript runtime)
-- **Build System**: Angular CLI with esbuild
-
-### Project Structure
+**How the code is organized:**
 ```
-src/
-├── app/
-│   ├── components/           # Reusable UI components
-│   │   ├── chat-interface/   # Main chat interface
-│   │   ├── chat-input/       # Message input component
-│   │   ├── message-bubble/   # Individual message display
-│   │   ├── header/          # Application header
-│   │   └── sidebar/         # Navigation sidebar
-│   ├── services/            # Business logic and data services
-│   │   ├── auth.service.ts  # Authentication management
-│   │   ├── chat.service.ts  # Chat state and message handling
-│   │   ├── websocket.service.ts # WebSocket communication
-│   │   └── api.service.ts   # HTTP API interactions
-│   ├── models/              # TypeScript interfaces and types
-│   │   ├── chat.models.ts   # Chat and conversation models
-│   │   └── sports.models.ts # Sports and betting data models
-│   ├── pages/               # Route components
-│   │   ├── chat/           # Chat page container
-│   │   └── home/           # Landing page
-│   └── utils/              # Utility functions and helpers
-├── assets/                 # Static assets (images, icons)
-└── environments/           # Environment configurations
+src/app/
+├── components/        # UI pieces you can reuse
+│   ├── chat-interface/ # The main chat window
+│   ├── chat-input/    # Where you type messages
+│   ├── message-bubble/ # Individual message display
+│   └── header/        # Top navigation
+├── services/          # The logic that makes things work
+│   ├── auth.service.ts    # Login/logout stuff
+│   ├── chat.service.ts    # Managing conversations
+│   ├── websocket.service.ts # Real-time connection
+│   └── api.service.ts     # Talking to the backend
+├── models/           # TypeScript types (keeps things organized)
+└── pages/           # Different screens in the app
 ```
 
-## 🔧 Installation & Setup
+## Getting it running
 
-### Prerequisites
-- **Node.js** (v18+)
-- **Bun** (v1.1.0+) - Fast JavaScript runtime
-- **Git** for version control
+**What you need first:**
+- Node.js (version 18 or newer)
+- Bun (it's like npm but faster)
+- Git
 
-### Quick Start
+**To start developing:**
 ```bash
-# Clone the repository
+# Get the code
 git clone https://github.com/DanielSarmiento04/chatbet-assistant.git
 cd chatbet-assistant/chatbet-frontend
 
-# Install dependencies
+# Install everything
 bun install
 
-# Start development server
+# Start the dev server
 bun run start
 
-# Open browser to http://localhost:4200
+# Open http://localhost:4200 in your browser
 ```
 
-### Available Scripts
+**Other commands you might need:**
 ```bash
-# Development
-bun run start          # Start dev server with hot reload
-bun run watch          # Build and watch for changes
-
-# Building
-bun run build          # Build for development
-bun run build:prod     # Build for production
-
-# Testing & Quality
-bun run test           # Run unit tests
-bun run lint           # Run ESLint
-bun run e2e            # Run end-to-end tests
-
-# Production
-bun run serve:ssr      # Serve production build
+bun run build         # Build for production
+bun run test          # Run tests
+bun run lint          # Check code quality
 ```
 
-## 🔌 Backend Integration
+## How it talks to the backend
 
-### WebSocket Connection
-The frontend connects to the ChatBet backend via WebSocket for real-time communication:
+**WebSocket connection:**
+The frontend connects to `ws://localhost:8000/ws/chat` and sends messages like this:
 
 ```typescript
-// WebSocket endpoint
-const WEBSOCKET_URL = 'ws://localhost:8000/ws/chat'
-
-// Message protocol
-interface WebSocketMessage {
-  type: 'message' | 'typing' | 'error' | 'connection_ack'
-  data: any
-  session_id?: string
-  message_id?: string
-}
-```
-
-### API Endpoints
-```typescript
-// REST API base URL
-const API_BASE_URL = 'http://localhost:8000/api'
-
-// Available endpoints
-GET    /api/health              # Health check
-POST   /api/auth/login          # User authentication
-GET    /api/chat/sessions       # Get chat sessions
-POST   /api/chat/message        # Send message (fallback)
-```
-
-## 🎨 UI Components
-
-### ChatInterface Component
-Main chat interface with real-time messaging capabilities.
-
-**Features:**
-- Real-time message streaming
-- Smart scroll management
-- Typing indicators
-- Connection status
-- Error handling
-
-**Usage:**
-```html
-<app-chat-interface></app-chat-interface>
-```
-
-### MessageBubble Component
-Individual message display with rich formatting.
-
-**Features:**
-- Role-based styling (user/bot)
-- Markdown rendering
-- Timestamp formatting
-- Loading states
-
-### ChatInput Component
-Message input with send functionality.
-
-**Features:**
-- Auto-resize textarea
-- Send on Enter key
-- Disabled states
-- Character limits
-
-## 🔐 Authentication
-
-### Authentication Flow
-1. User visits the application
-2. Authentication service checks for existing session
-3. If authenticated, WebSocket connection is established
-4. Chat interface becomes available
-
-### Auth Service Features
-```typescript
-// Authentication methods
-isAuthenticated(): boolean
-login(credentials): Promise<void>
-logout(): void
-getCurrentUser(): User | null
-```
-
-## 🌐 WebSocket Communication
-
-### Connection Management
-```typescript
-// Connection lifecycle
-connect()           # Establish WebSocket connection
-disconnect()        # Close connection gracefully
-reconnect()         # Automatic reconnection with backoff
-isConnected()       # Check connection status
-```
-
-### Message Protocol
-```typescript
-// Outgoing messages
 {
   type: 'message',
   data: {
-    content: string,
-    session_id: string
+    content: "What are today's football matches?",
+    session_id: "some-unique-id"
   }
 }
+```
 
-// Incoming messages
+The backend responds with:
+```typescript
 {
   type: 'response',
   data: {
-    content: string,
-    message_id: string,
-    is_final: boolean
+    content: "Here are today's matches...",
+    message_id: "another-unique-id",
+    is_final: true
   }
 }
 ```
 
-## 🎯 State Management
+**Regular API calls:**
+- `GET /api/health` - Check if backend is alive
+- `POST /api/auth/login` - Login
+- `GET /api/chat/sessions` - Get your chat history
 
-### Signal-based Architecture
-The application uses Angular's modern Signals for reactive state management:
+## Main components
+
+**ChatInterface:** The main chat window where everything happens. It handles scrolling, shows typing indicators, and connects to the WebSocket.
+
+**MessageBubble:** Shows individual messages. It can render markdown (bold text, lists, etc.) and styles messages differently for you vs the bot.
+
+**ChatInput:** The text area where you type. It grows as you type more text and sends messages when you press Enter.
+
+## How authentication works
+
+1. When you visit the site, it checks if you're already logged in
+2. If yes, it connects to the WebSocket and you can start chatting
+3. If no, you need to login first
+4. Once logged in, your session is saved so you don't have to login again
+
+The auth service keeps track of whether you're logged in and handles the login/logout process.
+
+## The WebSocket connection
+
+This is how messages appear instantly. The frontend opens a WebSocket connection to the backend and:
+
+- Sends your messages immediately
+- Receives bot responses in real-time
+- Shows when the bot is typing
+- Automatically reconnects if the connection drops
+- Shows connection status (connected/disconnected)
+
+## How state management works
+
+We use Angular's new Signals system instead of old-school observables. It's simpler:
 
 ```typescript
-// Service signals
+// These automatically update the UI when they change
 messages = signal<ChatMessage[]>([])
-isProcessing = signal<boolean>(false)
 isConnected = signal<boolean>(false)
+isTyping = signal<boolean>(false)
 
-// Computed values
+// This updates automatically when messages change
 hasMessages = computed(() => this.messages().length > 0)
 ```
 
-### Chat State
-- **Messages**: Array of chat messages
-- **Session**: Current conversation session
-- **Connection**: WebSocket connection status
-- **UI State**: Loading, typing, error states
+## What happens when you send a message
 
-## 🔄 Message Flow
+1. You type something and hit Enter
+2. The message gets added to the chat immediately
+3. WebSocket sends it to the backend
+4. UI shows a loading indicator
+5. Backend processes it and sends a response
+6. Response appears in the chat
+7. Page scrolls down automatically (unless you were scrolling up)
 
-### Sending Messages
-1. User types message in chat input
-2. Message is validated and added to local state
-3. WebSocket service sends message to backend
-4. UI shows loading state
-5. Response is received and displayed
+## Styling and themes
 
-### Receiving Messages
-1. Backend sends message via WebSocket
-2. WebSocket service processes incoming data
-3. Chat service updates message state
-4. UI reactively updates to show new message
-5. Auto-scroll triggers if user is at bottom
+Uses Material Design 3 with custom colors. The theme automatically switches between light and dark based on your system preferences.
 
-## 🎨 Theming & Styling
+Everything is responsive and works on phones. We use CSS Grid and Flexbox for layouts.
 
-### Material Design 3
-The application uses Angular Material with custom theming:
+## Testing
 
-```scss
-// Custom theme configuration
-@use '@angular/material' as mat;
-
-$primary-palette: mat.define-palette(mat.$green-palette);
-$accent-palette: mat.define-palette(mat.$blue-palette);
-$theme: mat.define-light-theme(...);
-```
-
-### Responsive Design
-- **Mobile First**: Optimized for mobile devices
-- **Breakpoints**: Material Design breakpoint system
-- **Flexible Layouts**: CSS Grid and Flexbox
-
-## 🧪 Testing
-
-### Unit Tests
 ```bash
 # Run all tests
 bun run test
 
-# Run specific test file
+# Run a specific test
 bun run test -- --include="**/chat.service.spec.ts"
 
-# Run with coverage
+# See test coverage
 bun run test -- --coverage
 ```
 
-### Test Structure
-- **Services**: Business logic testing
-- **Components**: UI behavior testing
-- **Integration**: WebSocket communication testing
+Tests cover the main services (auth, chat, websocket) and key components.
 
-## 🚀 Deployment
+## Building for production
 
-### Production Build
 ```bash
-# Create optimized production build
+# Create production build
 bun run build:prod
 
-# Files are generated in dist/ directory
-# Serve with any static file server
+# Files go in dist/ folder
+# You can serve them with any web server
 ```
 
-### Environment Configuration
+**Environment setup:**
+Create environment files for different setups:
+
 ```typescript
 // src/environments/environment.prod.ts
 export const environment = {
   production: true,
-  apiUrl: 'https://api.chatbet.com',
-  wsUrl: 'wss://api.chatbet.com/ws'
+  apiUrl: 'https://your-api.com',
+  wsUrl: 'wss://your-api.com/ws'
 };
 ```
 
-### Docker Support
-```dockerfile
-# Build stage
-FROM oven/bun:1 AS builder
-WORKDIR /app
-COPY package.json bun.lockb ./
-RUN bun install
-COPY . .
-RUN bun run build:prod
+## Common problems and fixes
 
-# Production stage
-FROM nginx:alpine
-COPY --from=builder /app/dist/chatbet-frontend /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/nginx.conf
-EXPOSE 80
-```
+**WebSocket won't connect:**
+- Check if the backend is running: `curl http://localhost:8000/api/health`
+- Make sure the WebSocket URL is correct
+- Check browser console for error messages
 
-## 🔧 Configuration
-
-### Environment Variables
+**Build fails:**
 ```bash
-# Development
-NG_API_URL=http://localhost:8000
-NG_WS_URL=ws://localhost:8000/ws
-
-# Production
-NG_API_URL=https://api.chatbet.com
-NG_WS_URL=wss://api.chatbet.com/ws
-```
-
-### Build Configuration
-Angular CLI configuration in `angular.json`:
-- Development: Fast builds with source maps
-- Production: Optimized builds with minification
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### WebSocket Connection Failed
-```bash
-# Check backend is running
-curl http://localhost:8000/api/health
-
-# Verify WebSocket endpoint
-curl -i -N -H "Connection: Upgrade" \
-  -H "Upgrade: websocket" \
-  -H "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" \
-  -H "Sec-WebSocket-Version: 13" \
-  http://localhost:8000/ws/chat
-```
-
-#### Build Errors
-```bash
-# Clear node modules and reinstall
+# Clean everything and start fresh
 rm -rf node_modules bun.lockb
 bun install
-
-# Clear Angular cache
-bun run ng cache clean
 ```
 
-#### Authentication Issues
-```bash
-# Check auth service configuration
-# Verify API endpoints are accessible
-# Check browser network tab for 401/403 errors
-```
+**Page loads but nothing works:**
+- Check browser network tab for failed requests
+- Look at console for JavaScript errors
+- Make sure API endpoints are reachable
 
-## 📊 Performance
+**Authentication not working:**
+- Check if login endpoint returns the right response
+- Verify auth tokens are being stored/sent correctly
+- Look for 401/403 errors in network tab
 
-### Optimization Features
-- **Lazy Loading**: Route-based code splitting
-- **OnPush Strategy**: Optimized change detection
-- **Signals**: Efficient reactive updates
-- **Bundle Optimization**: Tree-shaking and minification
+## Performance notes
 
-### Performance Metrics
-- **First Contentful Paint**: < 1.5s
-- **Largest Contentful Paint**: < 2.5s
-- **WebSocket Connection**: < 100ms
-- **Message Latency**: < 50ms
+The app loads fast because:
+- Uses lazy loading for different pages
+- Bundles are optimized and tree-shaken
+- Angular's OnPush change detection strategy
+- Signals update only what changed
 
-## 🔒 Security
+Typical performance:
+- Page loads in under 1.5 seconds
+- WebSocket connects in under 100ms
+- Messages appear in under 50ms
 
-### Security Features
-- **HTTPS**: Encrypted communication
-- **WSS**: Secure WebSocket connections
-- **Authentication**: JWT-based auth tokens
-- **CORS**: Proper cross-origin configuration
-- **Input Sanitization**: XSS prevention
+## Security stuff
 
-## 📈 Monitoring
+- All communication is encrypted (HTTPS/WSS)
+- Authentication uses JWT tokens
+- User input is sanitized to prevent XSS
+- CORS is configured properly
+- No sensitive data in localStorage
 
-### Error Tracking
-```typescript
-// Global error handler
-export class GlobalErrorHandler implements ErrorHandler {
-  handleError(error: any): void {
-    console.error('Global error:', error);
-    // Send to monitoring service
-  }
-}
-```
+## Contributing
 
-## 📜 License
+If you want to help out:
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1. Fork the repo
+2. Create a branch: `git checkout -b fix-something`
+3. Make your changes
+4. Test everything works
+5. Commit: `git commit -m "Fix something"`
+6. Push and create a pull request
+
+**Code style:**
+- Use TypeScript strict mode
+- Follow Angular style guide
+- Run `bun run lint` before committing
+- Write tests for new features
 
 ---
 
-Built with ❤️ by the Daniel Sarmiento 
+Built by Daniel Sarmiento 
