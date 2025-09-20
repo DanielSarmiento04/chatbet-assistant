@@ -132,6 +132,23 @@ export class ApiService {
    * User authentication and profile API endpoints
    */
   readonly auth = {
+    generateToken: (): Observable<{ token: string }> => {
+      return this.post<{ token: string }>('/auth/generate_token', {}, 'generateToken');
+    },
+
+    validateToken: (): Observable<{ message: string }> => {
+      return this.post<{ message: string }>('/auth/validate_token', {}, 'validateToken');
+    },
+
+    getUserInfo: (): Observable<User> => {
+      return this.get<User>('/auth/user_info', 'getUserInfo');
+    },
+
+    refreshToken: (): Observable<{ token: string }> => {
+      return this.post<{ token: string }>('/auth/refresh_token', {}, 'refreshToken');
+    },
+
+    // Legacy methods (kept for potential future use)
     login: (credentials: { email: string; password: string }): Observable<{ user: User; token: string }> => {
       return this.post<{ user: User; token: string }>('/auth/login', credentials, 'login');
     },
@@ -146,10 +163,6 @@ export class ApiService {
 
     logout: (): Observable<{ message: string }> => {
       return this.post<{ message: string }>('/auth/logout', {}, 'logout');
-    },
-
-    refreshToken: (): Observable<{ token: string }> => {
-      return this.post<{ token: string }>('/auth/refresh', {}, 'refreshToken');
     },
 
     getProfile: (): Observable<User> => {

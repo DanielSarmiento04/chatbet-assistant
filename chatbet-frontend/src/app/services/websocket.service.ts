@@ -213,13 +213,12 @@ export class WebSocketService {
    * Build WebSocket URL with authentication
    */
   private buildWebSocketUrl(): string {
-    const token = this.authService.token();
     const baseUrl = environment.wsUrl.replace('http', 'ws');
-
-    if (token) {
-      return `${baseUrl}?token=${encodeURIComponent(token)}`;
-    }
-
+    
+    // For now, connect without token since backend WebSocket doesn't expect it yet
+    // In future iterations, we can add: ?token=${encodeURIComponent(token)}
+    // when backend WebSocket endpoint is updated to handle token authentication
+    
     return baseUrl;
   }
 

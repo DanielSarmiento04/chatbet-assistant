@@ -4,3 +4,76 @@
   flex-direction: column;
   background: var(--chatbet-bg-primary);
 }
+
+.initialization-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  min-height: 60vh;
+}
+
+.initialization-card,
+.error-card {
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.loading-content,
+.error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: var(--mat-primary-color);
+  animation: pulse 2s ease-in-out infinite alternate;
+}
+
+.error-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: var(--mat-error-color);
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.6;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.loading-content h3,
+.error-content h3 {
+  margin: 0;
+  font-weight: 500;
+}
+
+.loading-content p,
+.error-content p {
+  margin: 0;
+  opacity: 0.7;
+}
+
+mat-progress-bar {
+  width: 100%;
+}
+
+// Chat interface takes full height when shown
+app-chat-interface {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

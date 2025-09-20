@@ -50,7 +50,81 @@ export class AuthService {
   }
 
   /**
-   * Login with email and password
+   * Generate ChatBet authentication token
+   * This is the primary authentication method for ChatBet API
+   */
+  async generateAuthToken(): Promise<boolean> {
+    try {
+      this.isLoadingSignal.set(true);
+      this.authErrorSignal.set(null);
+
+      const response = await this.apiService.auth.generateToken().toPromise();
+
+      if (response?.token) {
+        // For ChatBet API, we only have a token, no user object
+        // We'll create a minimal user object for the UI
+        const user: User = {
+          id: 'chatbet_user',
+          username: 'ChatBet User',
+          email: 'user@chatbet.com',
+          balance: 0,
+          currency: 'EUR',
+          isVerified: true,
+          avatar: undefined,
+          preferences: {
+            theme: 'light',
+            language: 'en',
+            timezone: 'UTC',
+            notifications: {
+              email: true,
+              push: true,
+              sound: true
+            },
+            favoriteTeams: [],
+            favoriteTournaments: [],
+            defaultStake: 10,
+            riskTolerance: 'moderate'
+          },
+          createdAt: new Date()
+        };
+
+        this.setAuthData(user, response.token);
+        return true;
+      }
+
+      return false;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Token generation failed';
+      this.authErrorSignal.set(errorMessage);
+      return false;
+
+    } finally {
+      this.isLoadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Validate current token with backend
+   */
+  async validateCurrentToken(): Promise<boolean> {
+    try {
+      if (!this.tokenSignal()) {
+        return false;
+      }
+
+      await this.apiService.auth.validateToken().toPromise();
+      return true;
+
+    } catch (error) {
+      // Clear auth data if validation fails
+      this.clearAuthData();
+      return false;
+    }
+  }
+
+  /**
+   * Login with email and password (legacy method)
    */
   async login(email: string, password: string): Promise<boolean> {
     try {
@@ -224,34 +298,22 @@ export class AuthService {
     }
 
     const updatedPreferences = { ...currentUser.preferences, ...preferences };
-    const updates = { preferences: updatedPreferences };
+    const updatedUser = { ...currentUser, preferences: updatedPreferences };
 
-    return this.updateProfile(updates);
+    // For ChatBet, just update locally since we don't have a user profile endpoint
+    this.userSignal.set(updatedUser);
+    this.storeUser(updatedUser);
+    
+    return true;
   }
 
   /**
-   * Get current user balance
+   * Get current user balance (placeholder for ChatBet)
    */
   async refreshBalance(): Promise<void> {
-    try {
-      if (!this.isAuthenticated()) {
-        return;
-      }
-
-      const balanceData = await this.apiService.auth.getBalance().toPromise();
-
-      if (balanceData) {
-        this.userSignal.update(user => {
-          if (user) {
-            return { ...user, balance: balanceData.balance, currency: balanceData.currency };
-          }
-          return user;
-        });
-      }
-
-    } catch (error) {
-      console.warn('Failed to refresh balance:', error);
-    }
+    // ChatBet API doesn't provide balance endpoint
+    // This is a placeholder for potential future implementation
+    console.log('Balance refresh not implemented for ChatBet API');
   }
 
   /**

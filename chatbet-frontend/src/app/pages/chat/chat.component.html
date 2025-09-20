@@ -1,3 +1,56 @@
 <div class="chat-page">
-  <app-chat-interface></app-chat-interface>
+  <!-- Authentication initialization -->
+  @if (isInitializing()) {
+    <div class="initialization-container">
+      <mat-card class="initialization-card">
+        <mat-card-content>
+          <div class="loading-content">
+            <mat-icon class="loading-icon">sports_soccer</mat-icon>
+            <h3>Connecting to ChatBet...</h3>
+            <p>Setting up your secure connection</p>
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Authentication error -->
+  @else if (initializationError()) {
+    <div class="initialization-container">
+      <mat-card class="error-card">
+        <mat-card-content>
+          <div class="error-content">
+            <mat-icon class="error-icon">error</mat-icon>
+            <h3>Connection Failed</h3>
+            <p>{{ initializationError() }}</p>
+            <button mat-raised-button color="primary" (click)="retryAuthentication()">
+              <mat-icon>refresh</mat-icon>
+              Try Again
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Chat interface (shown when authenticated) -->
+  @else if (isAuthenticated()) {
+    <app-chat-interface></app-chat-interface>
+  }
+
+  <!-- Fallback loading state -->
+  @else {
+    <div class="initialization-container">
+      <mat-card class="initialization-card">
+        <mat-card-content>
+          <div class="loading-content">
+            <mat-icon class="loading-icon">sports_soccer</mat-icon>
+            <h3>Loading...</h3>
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
 </div>
