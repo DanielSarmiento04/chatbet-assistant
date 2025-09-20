@@ -133,19 +133,19 @@ export class ApiService {
    */
   readonly auth = {
     generateToken: (): Observable<{ token: string }> => {
-      return this.post<{ token: string }>('/api/v1/auth/generate_token', {}, 'generateToken');
+      return this.postDirect<{ token: string }>('/api/v1/auth/generate_token', {}, 'generateToken');
     },
 
     validateToken: (): Observable<{ message: string }> => {
-      return this.post<{ message: string }>('/api/v1/auth/validate_token', {}, 'validateToken');
+      return this.postDirect<{ message: string }>('/api/v1/auth/validate_token', {}, 'validateToken');
     },
 
     getUserInfo: (): Observable<User> => {
-      return this.get<User>('/api/v1/auth/user_info', 'getUserInfo');
+      return this.getDirect<User>('/api/v1/auth/user_info', 'getUserInfo');
     },
 
     refreshToken: (): Observable<{ token: string }> => {
-      return this.post<{ token: string }>('/api/v1/auth/refresh_token', {}, 'refreshToken');
+      return this.postDirect<{ token: string }>('/api/v1/auth/refresh_token', {}, 'refreshToken');
     },
 
     // Legacy methods (kept for potential future use)
@@ -229,6 +229,45 @@ export class ApiService {
   }
 
   /**
+   * Direct HTTP methods for endpoints that don't use ApiResponse wrapper
+   */
+  private getDirect<T>(
+    endpoint: string,
+    operation: string,
+    options?: { params?: HttpParams }
+  ): Observable<T> {
+    return this.handleDirectRequest<T>(
+      this.http.get<T>(`${this.baseUrl}${endpoint}`, options),
+      operation
+    );
+  }
+
+  private postDirect<T>(endpoint: string, body: unknown, operation: string): Observable<T> {
+    return this.handleDirectRequest<T>(
+      this.http.post<T>(`${this.baseUrl}${endpoint}`, body),
+      operation
+    );
+  }
+
+  private putDirect<T>(endpoint: string, body: unknown, operation: string): Observable<T> {
+    return this.handleDirectRequest<T>(
+      this.http.put<T>(`${this.baseUrl}${endpoint}`, body),
+      operation
+    );
+  }
+
+  private deleteDirect<T>(
+    endpoint: string,
+    operation: string,
+    options?: { params?: HttpParams }
+  ): Observable<T> {
+    return this.handleDirectRequest<T>(
+      this.http.delete<T>(`${this.baseUrl}${endpoint}`, options),
+      operation
+    );
+  }
+
+  /**
    * Handle HTTP requests with loading states and error handling
    */
   private handleRequest<T>(
@@ -250,6 +289,34 @@ export class ApiService {
       catchError(error => this.handleError(error, operation)),
       // Remove operation from loading set regardless of success/failure
       // Using finalize would be better but we need to handle the loading state
+      shareReplay(1)
+    ).pipe(
+      // Use a separate subscription to handle loading state cleanup
+      map(data => {
+        this.removeLoadingOperation(operation);
+        return data;
+      }),
+      catchError(error => {
+        this.removeLoadingOperation(operation);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Handle direct HTTP requests (no ApiResponse wrapper) with loading states and error handling
+   */
+  private handleDirectRequest<T>(
+    request: Observable<T>,
+    operation: string
+  ): Observable<T> {
+    // Add operation to loading set
+    this.addLoadingOperation(operation);
+
+    return request.pipe(
+      timeout(environment.websocket.connectionTimeout),
+      retry(2),
+      catchError(error => this.handleError(error, operation)),
       shareReplay(1)
     ).pipe(
       // Use a separate subscription to handle loading state cleanup
