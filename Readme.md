@@ -95,7 +95,7 @@ The demonstration includes:
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/DanielSarmiento04/chatbet-assistant.git
 cd chatbet-assistant
 
 # Configure Gemini API Key in backend docker-compose.yml
