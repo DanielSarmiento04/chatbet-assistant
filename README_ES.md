@@ -31,7 +31,7 @@
 -->
 
 <!-- Video hospedado en GitHub (reemplazar con URL real cuando se suba):
-https://user-images.githubusercontent.com/yourusername/chatbet-demo.mp4
+https://github.com/DanielSarmiento04/chatbet-assistant/raw/main/output_o.mp4
 -->
 
 La demostración incluye:

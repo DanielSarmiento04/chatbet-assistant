@@ -31,7 +31,7 @@ Watch the ChatBet Assistant in action! The demo showcases the complete conversat
 -->
 
 <!-- GitHub-hosted video (replace with actual URL when uploaded):
-https://user-images.githubusercontent.com/yourusername/chatbet-demo.mp4
+https://github.com/DanielSarmiento04/chatbet-assistant/raw/main/output_o.mp4
 -->
 
 The demonstration includes:
