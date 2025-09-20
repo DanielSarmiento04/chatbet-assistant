@@ -1,39 +1,10 @@
 
+include:
+  - path: chatbet-backend/docker-compose.yml
+  - path: chatbet-frontend/docker-compose.yml
 
-services:
-  
-  backend:
-    image: backend
-    container_name: backend
-    build: ./backend/
-    ports:
-      - "8000:8000"
-    environment:
-      - GOOGLE_API_KEY=
-    depends_on:
-      - mongo
-    networks:
-      - interview
 
-  mongo:
-    image: mongo:latest
-    container_name: mongo
-    environment:
-      - TZ=America/Bogota
-      - MONGO_INITDB_ROOT_USERNAME=username
-      - MONGO_INITDB_ROOT_PASSWORD=password
-    ports:
-      - "27017:27017"
-    networks:
-      - interview
-    volumes:
-      - mongo-data:/data/db
-
-volumes:
-  mongo-data:
-    driver: local
 
 networks:
-
-  interview:
+  chatbet-network:
     driver: bridge

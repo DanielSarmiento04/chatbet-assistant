@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  chatbet-frontend:
+    container_name: chatbet-frontend
+    image: chatbet-frontend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - chatbet-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+volumes:
+  nginx_logs:
+    driver: local

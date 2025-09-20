@@ -1,0 +1,39 @@
+
+
+services:
+  chatbet-api-backend:
+    image: chatbet-api-backend
+    container_name: chatbet-api-backend
+    build: ./backend/
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - GOOGLE_API_KEY=
+      - GEMINI_MODEL=gemini-2.5-flash
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - SECRET_KEY=your-secret-key-for-development
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+      - CHATBET_API_BASE_URL=https://v46fnhvrjvtlrsmnismnwhdh5y0lckdl.lambda-url.us-east-1.on.aws
+    depends_on:
+      - redis
+    networks:
+      - chatbet-network
+
+  redis:
+    image: redis:8
+    container_name: chatbet-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - chatbet-network
+
+volumes:
+  redis-data:
+    driver: local
