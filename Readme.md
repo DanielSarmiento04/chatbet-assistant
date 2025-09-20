@@ -26,13 +26,9 @@ Watch the ChatBet Assistant in action! The demo showcases the complete conversat
 
 **[📥 Download Demo Video (output_o.mp4)](./output_o.mp4)**
 
-<!-- Uncomment when GIF version is available:
 ![ChatBet Assistant Demo](./output_o.gif)
--->
 
-<!-- GitHub-hosted video (replace with actual URL when uploaded):
-https://github.com/DanielSarmiento04/chatbet-assistant/raw/main/output_o.mp4
--->
+
 
 The demonstration includes:
 - 💬 **Natural Language Chat**: Seamless conversation with the AI assistant
