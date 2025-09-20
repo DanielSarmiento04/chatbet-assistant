@@ -68,7 +68,8 @@ async def _retry_api_call(func, max_retries: int = 2, delay: float = 1.0, *args,
     # If we get here, all retries failed
     if last_exception:
         raise last_exception
-    return result
+    # This should never happen, but just in case
+    return []
 
 
 class LLMError(Exception):
@@ -256,16 +257,6 @@ Be accurate and confident in your classifications. Consider context and user int
                     "message": f"Unable to retrieve fixtures: {str(e)}",
                     "suggestion": "Please try again later"
                 }]
-                fixtures_list = [f.model_dump() for f in fixtures[:15]]  # Limit to prevent token overflow
-                return fixtures_list
-                
-            except Exception as e:
-                logger.error(f"Error getting fixtures: {e}")
-                return [{
-                    "status": "error",
-                    "message": f"Unable to retrieve fixtures: {str(e)}",
-                    "suggestion": "Please try again later or check other tournaments"
-                }]
         
         @tool
         async def get_odds(
@@ -304,15 +295,23 @@ Be accurate and confident in your classifications. Consider context and user int
                         amount=amount
                     )
                 
-                odds_result = await _retry_api_call(_get_odds_api_call)
-                
-                # Check if retry returned an error response
-                if isinstance(odds_result, list) and len(odds_result) > 0:
-                    first_item = odds_result[0]
-                    if isinstance(first_item, dict) and first_item.get("status") == "error":
-                        return odds_result
-                
-                odds = odds_result
+                # For get_odds, we don't need the complex retry logic since it returns MatchOdds object
+                # Just do a simple retry
+                odds = None
+                last_exception = None
+                for attempt in range(3):  # 3 attempts total
+                    try:
+                        odds = await _get_odds_api_call()
+                        break
+                    except Exception as e:
+                        last_exception = e
+                        if attempt < 2:  # Only sleep if we have more attempts
+                            await asyncio.sleep(1.0 * (2 ** attempt))
+                        continue
+                else:
+                    # All retries failed
+                    if last_exception:
+                        raise last_exception
                 
                 if not odds:
                     return [{

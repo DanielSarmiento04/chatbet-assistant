@@ -26,13 +26,9 @@
 
 **[📥 Descargar Video Demo (output_o.mp4)](./output_o.mp4)**
 
-Descomentar cuando la versión GIF esté disponible:
+
 ![Demo ChatBet Assistant](./output_o.gif)
 
-
-<!-- Video hospedado en GitHub (reemplazar con URL real cuando se suba):
-https://github.com/DanielSarmiento04/chatbet-assistant/raw/main/output_o.mp4
--->
 
 La demostración incluye:
 - 💬 **Chat en Lenguaje Natural**: Conversación fluida con el asistente de IA
