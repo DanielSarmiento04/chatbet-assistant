@@ -36,6 +36,41 @@ from ..services.chatbet_api import get_api_client
 logger = get_logger(__name__)
 
 
+async def _retry_api_call(func, max_retries: int = 2, delay: float = 1.0, *args, **kwargs):
+    """
+    Internal retry helper for API calls.
+    
+    This provides retry logic without interfering with LangChain tool schema generation.
+    """
+    last_exception = None
+    
+    for attempt in range(max_retries + 1):
+        try:
+            result = await func(*args, **kwargs)
+            # Check if result indicates an error
+            if isinstance(result, list) and len(result) > 0:
+                first_item = result[0]
+                if isinstance(first_item, dict) and first_item.get("status") == "error":
+                    if attempt < max_retries:
+                        logger.warning(f"API call failed on attempt {attempt + 1}, retrying...")
+                        await asyncio.sleep(delay * (2 ** attempt))
+                        continue
+            return result
+        except Exception as e:
+            last_exception = e
+            if attempt < max_retries:
+                logger.warning(f"API call failed on attempt {attempt + 1}: {str(e)}, retrying...")
+                await asyncio.sleep(delay * (2 ** attempt))
+                continue
+            else:
+                logger.error(f"API call failed after {max_retries + 1} attempts: {str(e)}")
+    
+    # If we get here, all retries failed
+    if last_exception:
+        raise last_exception
+    return result
+
+
 class LLMError(Exception):
     """Base exception for LLM-related errors."""
     pass
@@ -158,7 +193,7 @@ Be accurate and confident in your classifications. Consider context and user int
         @tool
         async def get_tournaments() -> List[Dict[str, Any]]:
             """Get list of available tournaments and competitions."""
-            try:
+            async def _get_tournaments_impl():
                 api_client = await get_api_client()
                 tournaments = await api_client.get_tournaments()                
                 if not tournaments:
@@ -167,8 +202,10 @@ Be accurate and confident in your classifications. Consider context and user int
                         "message": "No tournaments currently available",
                         "suggestion": "Please try again later"
                     }]
-                
                 return [t.model_dump() for t in tournaments[:10]]  # Limit to prevent token overflow
+            
+            try:
+                return await _retry_api_call(_get_tournaments_impl)
             except Exception as e:
                 logger.error(f"Error getting tournaments: {e}")
                 return [{
@@ -186,7 +223,7 @@ Be accurate and confident in your classifications. Consider context and user int
                 tournament_id: Optional tournament ID to filter by
                 days_ahead: Number of days ahead to look for matches (default 7)
             """
-            try:
+            async def _get_fixtures_impl():
                 api_client = await get_api_client()
                 
                 # Get fixtures using the correct API method signature
@@ -202,15 +239,23 @@ Be accurate and confident in your classifications. Consider context and user int
                 
                 # Check if we have results
                 if not fixtures:
-                    # Return informative message instead of empty list
                     return [{
                         "status": "no_fixtures",
-                        "message": f"No upcoming fixtures found for tournament {tournament_id or 'all tournaments'}",
-                        "suggestion": "Try checking other tournaments or live matches",
-                        "total_results": fixtures_response.totalResults
+                        "message": f"No upcoming fixtures found" + (f" for tournament {tournament_id}" if tournament_id else ""),
+                        "suggestion": "Try checking other tournaments or live matches"
                     }]
                 
-                # Sort by date and limit results
+                return [f.model_dump() for f in fixtures[:15]]  # Limit results
+            
+            try:
+                return await _retry_api_call(_get_fixtures_impl)
+            except Exception as e:
+                logger.error(f"Error getting fixtures: {e}")
+                return [{
+                    "status": "error",
+                    "message": f"Unable to retrieve fixtures: {str(e)}",
+                    "suggestion": "Please try again later"
+                }]
                 fixtures_list = [f.model_dump() for f in fixtures[:15]]  # Limit to prevent token overflow
                 return fixtures_list
                 
@@ -542,6 +587,7 @@ Be accurate and confident in your classifications. Consider context and user int
         try:
             # Execute tool calls
             tool_results = []
+            failed_tools = []
             
             for tool_call in response.tool_calls:
                 tool_name = tool_call["name"]
@@ -550,17 +596,46 @@ Be accurate and confident in your classifications. Consider context and user int
                 # Find and execute the tool
                 for tool in self.tools:
                     if tool.name == tool_name:
-                        result = await tool.ainvoke(tool_args)
-                        tool_results.append({
-                            "tool_call_id": tool_call["id"],
-                            "tool_name": tool_name,
-                            "result": result
-                        })
+                        try:
+                            result = await tool.ainvoke(tool_args)
+                            # Check if result indicates an error or no data
+                            if isinstance(result, list) and len(result) > 0:
+                                first_item = result[0]
+                                if isinstance(first_item, dict):
+                                    status = first_item.get("status")
+                                    if status == "error":
+                                        failed_tools.append({
+                                            "tool_name": tool_name,
+                                            "error": first_item.get("message", "Unknown error"),
+                                            "suggestion": first_item.get("suggestion", "Please try again")
+                                        })
+                                    elif status == "no_tournaments":
+                                        # This is OK, not an error
+                                        pass
+                            
+                            tool_results.append({
+                                "tool_call_id": tool_call["id"],
+                                "tool_name": tool_name,
+                                "result": result
+                            })
+                        except Exception as e:
+                            logger.error(f"Tool {tool_name} failed: {str(e)}")
+                            failed_tools.append({
+                                "tool_name": tool_name,
+                                "error": str(e),
+                                "suggestion": "Please try again later"
+                            })
                         break
             
-            # Create a follow-up message with tool results
+            # Create a follow-up message with tool results and error context
             if tool_results:
-                tool_message = f"Based on the data I retrieved:\n{json.dumps(tool_results, indent=2)}\n\nNow let me provide you with a helpful response:"
+                tool_message = f"Based on the data I retrieved:\n{json.dumps(tool_results, indent=2)}"
+                
+                # Add context about failed tools if any
+                if failed_tools:
+                    tool_message += f"\n\nNote: Some data sources had issues:\n{json.dumps(failed_tools, indent=2)}"
+                
+                tool_message += "\n\nNow let me provide you with a helpful response:"
                 
                 # Add tool results to conversation and get final response
                 messages.append(response)

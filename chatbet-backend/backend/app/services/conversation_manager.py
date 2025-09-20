@@ -528,13 +528,13 @@ Just ask me anything about sports betting, and I'll help you make informed decis
             if not response_content or not response_content.strip():
                 # Provide a more helpful fallback response based on the intent
                 if intent_result.intent == IntentType.MATCH_SCHEDULE_QUERY:
-                    response_content = "I'm currently unable to retrieve match schedules. This might be because the tournament is in an off-season or there are no upcoming matches scheduled. Would you like me to check other tournaments or help you with something else?"
+                    response_content = "I'm currently unable to retrieve match schedules. This might be due to a temporary issue with the sports data service. The tournament might be in an off-season or there could be a brief connectivity issue. Please try again in a moment, or ask about general tournament information instead."
                 elif intent_result.intent == IntentType.ODDS_INFORMATION_QUERY:
-                    response_content = "I'm having trouble retrieving betting odds right now. This could be because betting markets aren't open yet or there's a temporary issue. Can I help you with tournament information or other sports queries instead?"
+                    response_content = "I'm having trouble accessing betting odds right now. This could be because betting markets aren't open yet, the match hasn't started accepting bets, or there's a temporary connection issue. Can I help you with tournament schedules or general betting information instead?"
                 elif intent_result.intent == IntentType.BETTING_RECOMMENDATION:
-                    response_content = "I'm unable to access current match data for betting recommendations right now. However, I can still help you understand betting strategies or explain different types of bets. What would you like to know?"
+                    response_content = "I'm unable to access current match data for betting recommendations right now due to a temporary issue with the sports data service. However, I can still help you understand betting strategies, explain different types of bets, or provide general tournament information. What would you like to know?"
                 else:
-                    response_content = "I apologize, but I'm having trouble generating a response right now. Please try asking your question again, or try asking about available tournaments or general betting information."
+                    response_content = "I'm experiencing a temporary issue accessing the sports data service. This usually resolves quickly - please try your question again in a moment. Alternatively, I can help with general betting information or explain how different types of sports bets work."
             
             # Create assistant message
             response_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)

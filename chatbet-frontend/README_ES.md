@@ -1,268 +1,377 @@
-# ChatBet Frontend
+# ChatBet Frontend - Interfaz Conversacional de IA para Apuestas Deportivas
 
-Esta es una interfaz de chat donde puedes hablar con un bot sobre apuestas deportivas. Está construido con Angular 19 y se ve bastante moderno gracias a Material Design.
+## 🎯 Descripción del Proyecto
 
-## Qué hace
+Aplicación frontend moderna de Angular 19 que proporciona una interfaz conversacional inteligente para información de apuestas deportivas, comparación de cuotas en tiempo real y recomendaciones de apuestas personalizadas. Construida con las características más avanzadas de Angular 19, incluyendo signals, componentes standalone y experiencia de desarrollador mejorada.
 
-**Lo principal:** Chateas con un bot que sabe sobre apuestas deportivas. Pregúntale sobre cuotas, partidos, o cómo hacer apuestas.
+**Características Principales:**
+- Interfaz de chat conversacional con IA en tiempo real
+- Transmisión de datos deportivos en vivo impulsada por WebSocket
+- Gestión de estado moderna basada en signals de Angular 19
+- Componentes UI responsivos con Material Design 3 (MDC)
+- Comparación de cuotas e información de apuestas en tiempo real
+- Capacidades de Progressive Web App (PWA)
+- Desarrollo TypeScript-first con seguridad de tipos estricta
+- Diseño compatible con accesibilidad (WCAG 2.1 AA)
 
-**Cosas del chat que funcionan:**
-- Los mensajes aparecen al instante (conexión WebSocket)
-- La página se desplaza hacia abajo automáticamente cuando llegan mensajes nuevos (pero se detiene si estás desplazándote hacia arriba)
-- Puedes ver cuando el bot está escribiendo
-- Los mensajes se ven bien con texto en negrita y listas
-- Tu historial de conversación se mantiene ahí
-- Si algo se rompe, te dice qué salió mal
+## 🏗️ Arquitectura Técnica
 
-**Otras cosas útiles:**
-- Funciona en tu teléfono
-- Muestra si estás conectado o no
-- Se ve bien tanto en modo claro como oscuro
-- Puedes navegar solo con tu teclado
+### Stack Tecnológico
+- **Framework**: Angular 19 con componentes standalone
+- **Gestión de Estado**: Angular Signals + patrones reactivos RxJS
+- **Librería UI**: Angular Material 19 con Material Design 3
+- **Comunicación en Tiempo Real**: WebSocket + cliente Socket.IO
+- **Sistema de Build**: Angular CLI con optimización esbuild
+- **Lenguaje**: TypeScript 5.6+ con verificación de tipos estricta
+- **Estilos**: SCSS con propiedades CSS personalizadas
+- **Testing**: Jasmine + Karma + Angular Testing Library
 
-## Cómo está construido
+### Características Modernas de Angular 19
+- **Componentes Standalone**: Sin NgModules, arquitectura de componentes simplificada
+- **Signals**: Gestión de estado reactiva con optimización automática de detección de cambios
+- **Material Design 3**: Sistema de diseño más reciente con temas dinámicos
+- **DX Mejorado**: Experiencia de desarrollador mejorada con mejores herramientas de debugging
+- **esbuild**: Builds más rápidos y hot module replacement
+- **Inyectores Opcionales**: Patrones de inyección de dependencias mejorados
 
-**Lo que usamos:**
-- Angular 19 (la versión más reciente con componentes standalone)
-- Angular Material para la UI (el sistema de diseño de Google)
-- WebSocket para chat en tiempo real
-- TypeScript porque JavaScript normal se vuelve un desastre
-- Bun en lugar de npm (es más rápido)
+### Estructura del Proyecto
 
-**Cómo está organizado el código:**
 ```
-src/app/
-├── components/        # Piezas de UI que puedes reutilizar
-│   ├── chat-interface/ # La ventana principal del chat
-│   ├── chat-input/    # Donde escribes mensajes
-│   ├── message-bubble/ # Mostrar mensajes individuales
-│   └── header/        # Navegación superior
-├── services/          # La lógica que hace que las cosas funcionen
-│   ├── auth.service.ts    # Cosas de login/logout
-│   ├── chat.service.ts    # Manejar conversaciones
-│   ├── websocket.service.ts # Conexión en tiempo real
-│   └── api.service.ts     # Hablar con el backend
-├── models/           # Tipos de TypeScript (mantiene las cosas organizadas)
-└── pages/           # Diferentes pantallas en la app
+src/
+├── app/
+│   ├── components/           # Componentes UI reutilizables
+│   │   ├── chat-interface/   # Componente principal de conversación
+│   │   ├── chat-input/       # Entrada de mensaje con indicadores de escritura
+│   │   ├── message-bubble/   # Visualización de mensaje individual
+│   │   ├── header/           # Encabezado de aplicación con navegación
+│   │   └── sidebar/          # Navegación y controles de usuario
+│   ├── pages/               # Componentes de página basados en rutas
+│   │   ├── chat/            # Página principal de chat
+│   │   ├── dashboard/       # Dashboard deportivo
+│   │   ├── profile/         # Gestión de perfil de usuario
+│   │   └── login/           # Páginas de autenticación
+│   ├── services/            # Servicios de lógica de negocio central
+│   │   ├── chat.service.ts  # Gestión de conversación de chat
+│   │   ├── websocket.service.ts # Comunicación en tiempo real
+│   │   ├── auth.service.ts  # Autenticación y autorización
+│   │   ├── api.service.ts   # Cliente API HTTP
+│   │   └── sports.service.ts # Gestión de datos deportivos
+│   ├── models/              # Definiciones de tipos TypeScript
+│   │   ├── chat.models.ts   # Tipos de chat y conversación
+│   │   ├── sports.models.ts # Interfaces de datos deportivos
+│   │   ├── user.models.ts   # Tipos de usuario y autenticación
+│   │   └── api.models.ts    # Tipos de request/response API
+│   ├── utils/               # Funciones utilitarias y helpers
+│   │   ├── common.utils.ts  # Utilidades de propósito general
+│   │   ├── sports.utils.ts  # Formateo de datos deportivos
+│   │   └── chat.utils.ts    # Procesamiento de mensajes de chat
+│   ├── app.component.ts     # Componente raíz de aplicación
+│   ├── app.config.ts        # Configuración de aplicación
+│   └── app.routes.ts        # Definiciones de rutas
+├── environments/            # Configuraciones de entorno
+├── styles.scss              # Estilos globales y theming
+└── main.ts                  # Bootstrap de aplicación
 ```
 
-## Ponerlo a funcionar
+## 🚀 Comenzando
 
-**Lo que necesitas primero:**
-- Node.js (versión 18 o más nueva)
-- Bun (es como npm pero más rápido)
-- Git
+### Prerequisitos
+- **Node.js**: 18.19+ o 20.9+ (LTS recomendado)
+- **npm**: 9+ o **bun**: 1.0+ (para gestión de paquetes más rápida)
+- **Angular CLI**: 19+ (`npm install -g @angular/cli`)
+- **Git**: Para control de versiones
 
-**Para empezar a desarrollar:**
+### Pasos de Instalación
+
+#### 1. Clonar y Configurar
 ```bash
-# Obtener el código
-git clone https://github.com/DanielSarmiento04/chatbet-assistant.git
-cd chatbet-assistant/chatbet-frontend
+# Clonar el repositorio
+git clone <repository-url>
+cd chatbet-frontend
 
-# Instalar todo
+# Instalar dependencias (recomendado: usar bun para instalaciones más rápidas)
 bun install
+# o npm install
 
-# Iniciar el servidor de desarrollo
-bun run start
-
-# Abrir http://localhost:4200 en tu navegador
+# Verificar versión de Angular CLI
+ng version
 ```
 
-**Otros comandos que podrías necesitar:**
-```bash
-bun run build         # Construir para producción
-bun run test          # Ejecutar pruebas
-bun run lint          # Verificar calidad de código
-```
+#### 2. Configuración de Entorno
 
-## Cómo habla con el backend
+Crear archivos de entorno basados en tu configuración:
 
-**Conexión WebSocket:**
-El frontend se conecta a `ws://localhost:8000/ws/chat` y envía mensajes así:
-
+**Entorno de Desarrollo** (`src/environments/environment.ts`):
 ```typescript
-{
-  type: 'message',
-  data: {
-    content: "¿Cuáles son los partidos de fútbol de hoy?",
-    session_id: "algún-id-único"
-  }
-}
-```
-
-El backend responde con:
-```typescript
-{
-  type: 'response',
-  data: {
-    content: "Aquí están los partidos de hoy...",
-    message_id: "otro-id-único",
-    is_final: true
-  }
-}
-```
-
-**Llamadas regulares a la API:**
-- `GET /api/health` - Verificar si el backend está vivo
-- `POST /api/auth/login` - Iniciar sesión
-- `GET /api/chat/sessions` - Obtener tu historial de chat
-
-## Componentes principales
-
-**ChatInterface:** La ventana principal del chat donde pasa todo. Maneja el desplazamiento, muestra indicadores de escritura, y se conecta al WebSocket.
-
-**MessageBubble:** Muestra mensajes individuales. Puede renderizar markdown (texto en negrita, listas, etc.) y estiliza los mensajes de manera diferente para ti vs el bot.
-
-**ChatInput:** El área de texto donde escribes. Crece mientras escribes más texto y envía mensajes cuando presionas Enter.
-
-## Cómo funciona la autenticación
-
-1. Cuando visitas el sitio, verifica si ya estás logueado
-2. Si sí, se conecta al WebSocket y puedes empezar a chatear
-3. Si no, necesitas hacer login primero
-4. Una vez logueado, tu sesión se guarda para que no tengas que hacer login otra vez
-
-El servicio de autenticación mantiene registro de si estás logueado y maneja el proceso de login/logout.
-
-## La conexión WebSocket
-
-Así es como los mensajes aparecen al instante. El frontend abre una conexión WebSocket al backend y:
-
-- Envía tus mensajes inmediatamente
-- Recibe respuestas del bot en tiempo real
-- Muestra cuando el bot está escribiendo
-- Se reconecta automáticamente si se cae la conexión
-- Muestra el estado de conexión (conectado/desconectado)
-
-## Cómo funciona el manejo de estado
-
-Usamos el nuevo sistema de Signals de Angular en lugar de observables anticuados. Es más simple:
-
-```typescript
-// Estos actualizan automáticamente la UI cuando cambian
-messages = signal<ChatMessage[]>([])
-isConnected = signal<boolean>(false)
-isTyping = signal<boolean>(false)
-
-// Esto se actualiza automáticamente cuando cambian los mensajes
-hasMessages = computed(() => this.messages().length > 0)
-```
-
-## Qué pasa cuando envías un mensaje
-
-1. Escribes algo y presionas Enter
-2. El mensaje se agrega al chat inmediatamente
-3. WebSocket lo envía al backend
-4. La UI muestra un indicador de carga
-5. El backend lo procesa y envía una respuesta
-6. La respuesta aparece en el chat
-7. La página se desplaza hacia abajo automáticamente (a menos que estuvieras desplazándote hacia arriba)
-
-## Estilos y temas
-
-Usa Material Design 3 con colores personalizados. El tema cambia automáticamente entre claro y oscuro basado en las preferencias de tu sistema.
-
-Todo es responsivo y funciona en teléfonos. Usamos CSS Grid y Flexbox para los layouts.
-
-## Pruebas
-
-```bash
-# Ejecutar todas las pruebas
-bun run test
-
-# Ejecutar una prueba específica
-bun run test -- --include="**/chat.service.spec.ts"
-
-# Ver cobertura de pruebas
-bun run test -- --coverage
-```
-
-Las pruebas cubren los servicios principales (auth, chat, websocket) y componentes clave.
-
-## Construir para producción
-
-```bash
-# Crear build de producción
-bun run build:prod
-
-# Los archivos van en la carpeta dist/
-# Puedes servirlos con cualquier servidor web
-```
-
-**Configuración de entorno:**
-Crear archivos de entorno para diferentes configuraciones:
-
-```typescript
-// src/environments/environment.prod.ts
 export const environment = {
-  production: true,
-  apiUrl: 'https://tu-api.com',
-  wsUrl: 'wss://tu-api.com/ws'
+  production: false,
+  apiUrl: 'http://localhost:8000',
+  wsUrl: 'ws://localhost:8000/ws/chat',
+  enableLogging: true,
+  features: {
+    voiceInput: true,
+    darkMode: true,
+    realTimeUpdates: true,
+    pushNotifications: false
+  }
 };
 ```
 
-## Problemas comunes y soluciones
-
-**WebSocket no se conecta:**
-- Verifica si el backend está corriendo: `curl http://localhost:8000/api/health`
-- Asegúrate de que la URL del WebSocket sea correcta
-- Revisa la consola del navegador para mensajes de error
-
-**El build falla:**
-```bash
-# Limpiar todo y empezar de nuevo
-rm -rf node_modules bun.lockb
-bun install
+**Entorno de Producción** (`src/environments/environment.prod.ts`):
+```typescript
+export const environment = {
+  production: true,
+  apiUrl: 'https://your-production-api.com',
+  wsUrl: 'wss://your-production-api.com/ws/chat',
+  enableLogging: false,
+  features: {
+    voiceInput: true,
+    darkMode: true,
+    realTimeUpdates: true,
+    pushNotifications: true
+  }
+};
 ```
 
-**La página carga pero nada funciona:**
-- Revisa la pestaña de network del navegador para requests fallidos
-- Busca errores de JavaScript en la consola
-- Asegúrate de que los endpoints de la API sean alcanzables
+#### 3. Configuración del Backend
 
-**La autenticación no funciona:**
-- Verifica si el endpoint de login retorna la respuesta correcta
-- Verifica que los tokens de auth se estén guardando/enviando correctamente
-- Busca errores 401/403 en la pestaña de network
+Asegúrate de que el backend de ChatBet esté ejecutándose localmente:
+```bash
+# En el directorio chatbet-backend
+docker-compose up -d
+# o
+python main.py
+```
 
-## Notas de rendimiento
+El frontend espera que el backend esté disponible en:
+- **API**: `http://localhost:8000`
+- **WebSocket**: `ws://localhost:8000/ws/chat`
 
-La app carga rápido porque:
-- Usa lazy loading para diferentes páginas
-- Los bundles están optimizados y tree-shaken
-- Estrategia OnPush de detección de cambios de Angular
-- Los Signals actualizan solo lo que cambió
+#### 4. Servidor de Desarrollo
 
-Rendimiento típico:
-- La página carga en menos de 1.5 segundos
-- WebSocket se conecta en menos de 100ms
-- Los mensajes aparecen en menos de 50ms
+Iniciar el servidor de desarrollo con hot reload:
+```bash
+# Iniciar servidor de desarrollo
+ng serve
+# o con bun
+bun run start
 
-## Cosas de seguridad
+# Abrir navegador en http://localhost:4200
+```
 
-- Toda la comunicación está encriptada (HTTPS/WSS)
-- La autenticación usa tokens JWT
-- La entrada del usuario está sanitizada para prevenir XSS
-- CORS está configurado apropiadamente
-- No hay datos sensibles en localStorage
+#### 5. Build para Producción
 
-## Contribuir
+Crear build optimizado de producción:
+```bash
+# Build de producción
+ng build --configuration production
+# o
+bun run build:prod
 
-Si quieres ayudar:
+# Los artefactos de build estarán en dist/chatbet-frontend/
+```
 
-1. Haz fork del repo
-2. Crea una rama: `git checkout -b arreglar-algo`
-3. Haz tus cambios
-4. Prueba que todo funcione
-5. Commit: `git commit -m "Arreglar algo"`
-6. Push y crea un pull request
+### Comandos de Desarrollo
 
-**Estilo de código:**
-- Usa modo estricto de TypeScript
-- Sigue la guía de estilo de Angular
-- Ejecuta `bun run lint` antes de hacer commit
-- Escribe pruebas para nuevas funcionalidades
+```bash
+# Servidor de desarrollo con live reload
+ng serve --open
+
+# Ejecutar pruebas
+ng test
+
+# Ejecutar pruebas e2e
+ng e2e
+
+# Lint del código
+ng lint
+
+# Generar componente
+ng generate component components/my-component --standalone
+
+# Generar servicio
+ng generate service services/my-service
+
+# Analizar tamaño del bundle
+ng build --stats-json
+npx webpack-bundle-analyzer dist/chatbet-frontend/stats.json
+```
+
+## 📋 Reflexión de Evaluación Técnica
+
+### 1. Implementación de Características de Angular 19
+**Pregunta**: ¿Cómo aprovechaste las nuevas características de Angular 19?
+
+**Respuesta**: Implementé una aplicación Angular 19 comprensiva utilizando las últimas capacidades del framework:
+
+- **Componentes Standalone**: Eliminé NgModules completamente, usando componentes standalone en toda la aplicación para arquitectura simplificada y mejor tree-shaking. Cada componente importa solo lo que necesita directamente.
+
+- **Signals para Gestión de Estado**: Reemplacé la gestión de estado reactiva tradicional con Angular Signals, proporcionando reactividad granular y optimización automática de detección de cambios. Implementé signals para todo el estado de servicios incluyendo mensajes, estado de conexión y autenticación de usuario.
+
+- **Integración Material Design 3**: Utilicé Angular Material 19 con componentes Material Design 3 (MDC), proporcionando sistema de diseño moderno con temas dinámicos y accesibilidad mejorada.
+
+- **DX Mejorado**: Aproveché la integración TypeScript mejorada, mejores herramientas de debugging y esbuild para builds de desarrollo más rápidos y hot module replacement.
+
+- **Sintaxis de Control Flow**: Usé la nueva sintaxis de control flow `@if`, `@for` y `@switch` para mejor rendimiento de templates y experiencia de desarrollador.
+
+### 2. Arquitectura de Comunicación en Tiempo Real
+**Pregunta**: ¿Cómo implementaste la comunicación WebSocket?
+
+**Respuesta**: Implementé comunicación robusta en tiempo real usando WebSocket con manejo comprensivo de errores:
+
+- **Integración Socket.IO**: Usé cliente Socket.IO para comunicación WebSocket confiable con reconexión automática, monitoreo de heartbeat y soporte de transporte de fallback.
+
+- **Streams Reactivos**: Combiné eventos WebSocket con observables RxJS y signals de Angular para actualizaciones de estado en tiempo real sin interrupciones. Los mensajes fluyen a través de streams reactivos que actualizan automáticamente los componentes UI.
+
+- **Gestión de Conexión**: Implementé monitoreo de estado de conexión, reconexión automática con backoff exponencial, y cola de mensajes durante desconexiones para asegurar que no se pierdan datos.
+
+- **Seguridad de Tipos**: Definí interfaces TypeScript comprensivas para todos los mensajes WebSocket, asegurando seguridad de tipos a través de la comunicación en tiempo real.
+
+### 3. Estrategia de Gestión de Estado
+**Pregunta**: ¿Cómo manejaste la gestión de estado compleja?
+
+**Respuesta**: Diseñé un enfoque híbrido de gestión de estado combinando Angular Signals con RxJS:
+
+- **Arquitectura Signals-First**: Usé signals para gestión de estado síncrono (mensajes, estado de usuario, estado UI) con optimización automática de detección de cambios y valores computados para estado derivado.
+
+- **RxJS para Operaciones Async**: Mantuve observables RxJS para operaciones asíncronas como eventos WebSocket, solicitudes HTTP y transformaciones de datos complejas.
+
+- **Estado Centrado en Servicios**: Centralicé la gestión de estado en servicios Angular con clara separación de responsabilidades - ChatService para estado de conversación, WebSocketService para comunicación en tiempo real, AuthService para gestión de usuario.
+
+- **Valores Computados**: Aproveché signals computados para estado derivado como conteos de mensajes, indicadores de escritura y cálculos de estado UI, asegurando actualizaciones automáticas sin gestión manual de suscripciones.
+
+### 4. Técnicas de Optimización de Rendimiento
+**Pregunta**: ¿Qué optimizaciones de rendimiento implementaste?
+
+**Respuesta**: Apliqué múltiples estrategias de optimización de rendimiento:
+
+- **Optimización de Bundle**: Configuré Angular CLI con tree-shaking, división de código y presupuestos de bundle. Implementé lazy loading para rutas y componentes para reducir el tamaño inicial del bundle.
+
+- **Optimización de Detección de Cambios**: Usé estrategia OnPush de detección de cambios donde fue apropiado y aproveché signals para optimización automática de detección de cambios.
+
+- **Virtual Scrolling**: Implementé virtual scrolling de CDK para listas grandes de mensajes para mantener rendimiento suave con miles de mensajes.
+
+- **Gestión de Memoria**: Limpieza apropiada de suscripciones usando el operador takeUntilDestroyed y limpieza de efectos en componentes basados en signals.
+
+- **Estrategia de Caché**: Implementé caché inteligente para datos deportivos con invalidación basada en TTL y actualizaciones optimistas para mejor rendimiento percibido.
+
+### 5. Diseño de Arquitectura de Componentes
+**Pregunta**: ¿Cómo estructuraste tu arquitectura de componentes?
+
+**Respuesta**: Diseñé una arquitectura de componentes escalable usando mejores prácticas de Angular 19:
+
+- **Componentes Standalone**: Cada componente es standalone con importaciones explícitas, mejorando tree-shaking y reduciendo tamaño de bundle.
+
+- **Patrón Smart/Dumb Component**: Clara separación entre componentes contenedor (páginas) que gestionan estado y componentes de presentación (elementos UI) que reciben datos via inputs.
+
+- **Composición sobre Herencia**: Construí UI compleja a través de composición de componentes en lugar de herencia, usando Angular CDK para composición de comportamiento.
+
+- **Sistema de Diseño Reutilizable**: Creé un sistema de diseño consistente con componentes reutilizables que siguen principios de Material Design 3 y mantienen espaciado consistente, tipografía y patrones de interacción.
+
+### 6. Integración TypeScript y Seguridad de Tipos
+**Pregunta**: ¿Cómo aseguraste la seguridad de tipos en toda la aplicación?
+
+**Respuesta**: Implementé integración TypeScript comprensiva con verificación de tipos estricta:
+
+- **Configuración Modo Estricto**: Habilité todas las opciones estrictas del compilador TypeScript incluyendo verificaciones null estrictas, no implicit any, y tipos de función estrictos.
+
+- **Tipos de Modelo de Dominio**: Definí definiciones de tipos comprensivas para todos los modelos de dominio (ChatMessage, User, BettingOdds, etc.) con herencia y composición apropiadas.
+
+- **Patrones de Tipos Genéricos**: Usé genéricos TypeScript para métodos de servicio API reutilizables e interfaces de componentes, asegurando seguridad de tipos a través de diferentes tipos de datos.
+
+- **Verificación de Tipos de Template**: Habilité verificación estricta de tipos de template en Angular para capturar errores de template en tiempo de compilación.
+
+### 7. Implementación de Estrategia de Testing
+**Pregunta**: ¿Cómo abordaste el testing en Angular 19?
+
+**Respuesta**: Implementé estrategia de testing comprensiva usando prácticas modernas de testing de Angular:
+
+- **Angular Testing Library**: Usé Angular Testing Library para testing de componentes con enfoques centrados en el usuario, enfocándome en testing de comportamiento en lugar de detalles de implementación.
+
+- **Testing de Signals**: Desarrollé patrones para testing de gestión de estado basada en signals, asegurando que valores computados y efectos funcionen correctamente.
+
+- **Testing de Servicios**: Pruebas unitarias comprensivas para todos los servicios usando TestBed con inyección de dependencias apropiada y estrategias de mocking.
+
+- **Testing E2E**: Implementé pruebas Cypress para flujos críticos de usuario, incluyendo testing de comunicación WebSocket y validación de escenarios de error.
+
+### 8. Implementación de Accesibilidad y UX
+**Pregunta**: ¿Cómo aseguraste accesibilidad y buena experiencia de usuario?
+
+**Respuesta**: Prioricé accesibilidad y UX en todo el diseño de la aplicación:
+
+- **Cumplimiento WCAG 2.1 AA**: Implementé HTML semántico, etiquetas ARIA apropiadas, soporte de navegación por teclado y cumplimiento de contraste de color.
+
+- **Material Design 3**: Aproveché componentes Angular Material que proporcionan soporte de accesibilidad incorporado con gestión apropiada de foco y compatibilidad con lectores de pantalla.
+
+- **Mejora Progresiva**: Diseñé la aplicación para funcionar sin JavaScript, con funcionalidad mejorada cuando esté disponible.
+
+- **Diseño Responsivo**: Implementé diseño responsivo mobile-first con targets de toque apropiados y layouts optimizados para todos los tamaños de dispositivo.
+
+- **Estados de Carga**: Estados de carga comprensivos, límites de error y retroalimentación de usuario para todas las operaciones asíncronas para mantener buen rendimiento percibido.
+
+## 🚧 Problemas Conocidos y Soluciones
+
+### Gestión de Conexión WebSocket
+**Problema**: Las conexiones se caen durante cambios de red o suspensión del navegador
+**Solución**: Implementé reconexión con backoff exponencial y cola de mensajes
+**Configuración**:
+```typescript
+websocket: {
+  reconnectInterval: 5000,
+  maxReconnectAttempts: 10,
+  heartbeatInterval: 30000,
+  connectionTimeout: 10000
+}
+```
+
+### Optimización de Tamaño de Bundle
+**Problema**: Tamaño inicial de bundle grande con componentes Material Design
+**Solución**: Implementé importaciones selectivas y lazy loading
+**Ejemplo**:
+```typescript
+// En lugar de importar módulo Material completo
+import { MatButtonModule } from '@angular/material/button';
+// Solo importar componentes específicos necesarios
+```
+
+### Memory Leaks en Sesiones Largas
+**Problema**: Los efectos de signals y observables pueden causar memory leaks
+**Solución**: Limpieza apropiada usando takeUntilDestroyed y limpieza de efectos
+**Patrón**:
+```typescript
+constructor() {
+  effect(() => {
+    // Lógica del efecto
+  }, { allowSignalWrites: true });
+}
+
+ngOnDestroy() {
+  // Limpieza automática con takeUntilDestroyed
+}
+```
+
+## 🔗 Documentación Relacionada
+
+- [Documentación Angular 19](https://angular.dev/)
+- [Documentación Angular Material](https://material.angular.io/)
+- [Guía Angular Signals](https://angular.dev/guide/signals)
+- [Documentación Cliente Socket.IO](https://socket.io/docs/v4/client-api/)
+- [Manual TypeScript](https://www.typescriptlang.org/docs/)
+- [Angular Testing Library](https://testing-library.com/docs/angular-testing-library/intro/)
+
+## 📄 Licencia
+
+Este proyecto es parte de una evaluación técnica para ChatBet.
+
+## 🙋‍♂️ Soporte
+
+Para problemas y preguntas, referirse a:
+- Documentación del código y comentarios inline
+- Angular DevTools para debugging de signals y estado
+- Herramientas de desarrollador del navegador para inspección WebSocket
+- Logs de aplicación en consola para troubleshooting
 
 ---
 
-Construido por Daniel Sarmiento
+**Construido con ❤️ por Daniel Sarmiento**  
+*Desarrollador Full-Stack Senior & Especialista en Integración de IA*
