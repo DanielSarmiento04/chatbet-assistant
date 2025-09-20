@@ -19,9 +19,20 @@ Watch the ChatBet Assistant in action! The demo showcases the complete conversat
 
 **Demo Video**: `output_o.mp4`
 
-<video width="320" height="240" controls>
-  <source src="./output_o.mp4" type="video/mp4">
-</video>
+> **📺 Viewing the Demo:**
+> - **Local Development**: The video plays directly in VS Code markdown preview
+> - **GitHub**: Click the link below to download and view the demo video
+> - **Alternative**: A GIF version is available for inline viewing on GitHub
+
+**[📥 Download Demo Video (output_o.mp4)](./output_o.mp4)**
+
+<!-- Uncomment when GIF version is available:
+![ChatBet Assistant Demo](./output_o.gif)
+-->
+
+<!-- GitHub-hosted video (replace with actual URL when uploaded):
+https://user-images.githubusercontent.com/yourusername/chatbet-demo.mp4
+-->
 
 The demonstration includes:
 - 💬 **Natural Language Chat**: Seamless conversation with the AI assistant
