@@ -297,7 +297,7 @@ Be accurate and confident in your classifications. Consider context and user int
                 
                 # For get_odds, we don't need the complex retry logic since it returns MatchOdds object
                 # Just do a simple retry
-                odds = None
+                odds: Optional[MatchOdds] = None
                 last_exception = None
                 for attempt in range(3):  # 3 attempts total
                     try:
