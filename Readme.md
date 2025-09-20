@@ -401,31 +401,7 @@ This project provides complete bilingual documentation:
 
 All documentation maintains feature parity across languages with appropriate technical terminology and cultural localization.
 
-## 🤝 Contributing
 
-### Development Guidelines
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes following the coding standards
-4. Run tests: `bun run test` (frontend) or `pytest` (backend)
-5. Commit your changes: `git commit -m "Add amazing feature"`
-6. Push to the branch: `git push origin feature/amazing-feature`
-7. Open a Pull Request
-
-### Coding Standards
-- **Backend**: Follow PEP 8 with Black formatting
-- **Frontend**: Follow Angular style guide with ESLint
-- **TypeScript**: Strict mode enabled with complete type coverage
-- **Testing**: Minimum 80% code coverage required
-- **Documentation**: Update relevant README files for changes
-
-## 📄 License
-
-This project is part of a technical evaluation for ChatBet.
-
-## 🙋‍♂️ Support & Contact
-
-For questions, issues, or support:
 
 ### Documentation
 - Backend API: http://localhost:8000/docs
