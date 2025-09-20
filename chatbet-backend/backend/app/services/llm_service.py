@@ -161,10 +161,22 @@ Be accurate and confident in your classifications. Consider context and user int
             try:
                 api_client = await get_api_client()
                 tournaments = await api_client.get_tournaments()
+                
+                if not tournaments:
+                    return [{
+                        "status": "no_tournaments", 
+                        "message": "No tournaments currently available",
+                        "suggestion": "Please try again later"
+                    }]
+                
                 return [t.model_dump() for t in tournaments[:10]]  # Limit to prevent token overflow
             except Exception as e:
                 logger.error(f"Error getting tournaments: {e}")
-                return []
+                return [{
+                    "status": "error",
+                    "message": f"Unable to retrieve tournaments: {str(e)}",
+                    "suggestion": "Please try again later"
+                }]
         
         @tool
         async def get_fixtures(tournament_id: Optional[str] = None, days_ahead: int = 7) -> List[Dict[str, Any]]:
@@ -189,13 +201,27 @@ Be accurate and confident in your classifications. Consider context and user int
                 # Extract fixtures from response
                 fixtures = fixtures_response.fixtures
                 
+                # Check if we have results
+                if not fixtures:
+                    # Return informative message instead of empty list
+                    return [{
+                        "status": "no_fixtures",
+                        "message": f"No upcoming fixtures found for tournament {tournament_id or 'all tournaments'}",
+                        "suggestion": "Try checking other tournaments or live matches",
+                        "total_results": fixtures_response.totalResults
+                    }]
+                
                 # Sort by date and limit results
                 fixtures_list = [f.model_dump() for f in fixtures[:15]]  # Limit to prevent token overflow
                 return fixtures_list
                 
             except Exception as e:
                 logger.error(f"Error getting fixtures: {e}")
-                return []
+                return [{
+                    "status": "error",
+                    "message": f"Unable to retrieve fixtures: {str(e)}",
+                    "suggestion": "Please try again later or check other tournaments"
+                }]
         
         @tool
         async def get_odds(
@@ -218,7 +244,11 @@ Be accurate and confident in your classifications. Consider context and user int
                 # The API requires sport_id, tournament_id, fixture_id, and amount
                 if not fixture_id or not tournament_id:
                     logger.warning("Cannot get odds without fixture_id and tournament_id")
-                    return []
+                    return [{
+                        "status": "missing_info",
+                        "message": "To get betting odds, I need a specific match/fixture ID and tournament ID",
+                        "suggestion": "Please ask about odds for a specific match from the fixtures list"
+                    }]
                 
                 api_client = await get_api_client()
                 odds = await api_client.get_odds(
@@ -229,7 +259,11 @@ Be accurate and confident in your classifications. Consider context and user int
                 )
                 
                 if not odds:
-                    return []
+                    return [{
+                        "status": "no_odds",
+                        "message": f"No betting odds available for fixture {fixture_id}",
+                        "suggestion": "This match might not have odds available yet, or betting might be suspended"
+                    }]
                 
                 # Simplify odds data for LLM consumption based on actual MatchOdds structure
                 simplified_odds = {
@@ -277,6 +311,13 @@ Be accurate and confident in your classifications. Consider context and user int
                         "data": odds.handicap
                     })
                 
+                if not available_markets:
+                    return [{
+                        "status": "no_markets",
+                        "message": f"No betting markets available for fixture {fixture_id}",
+                        "suggestion": "This match might not have betting markets open yet"
+                    }]
+                
                 # Limit to top 3 markets to prevent token overflow
                 simplified_odds["markets"] = available_markets[:3]
                 
@@ -284,7 +325,11 @@ Be accurate and confident in your classifications. Consider context and user int
                 
             except Exception as e:
                 logger.error(f"Error getting odds: {e}")
-                return []
+                return [{
+                    "status": "error",
+                    "message": f"Unable to retrieve odds: {str(e)}",
+                    "suggestion": "Please try again later"
+                }]
         
         @tool
         async def search_team_matches(team_name: str) -> List[Dict[str, Any]]:
@@ -305,15 +350,70 @@ Be accurate and confident in your classifications. Consider context and user int
                         team_name.lower() in fixture.awayCompetitor.name.lower()):
                         team_matches.append(fixture.model_dump())
                 
+                if not team_matches:
+                    return [{
+                        "status": "no_matches",
+                        "message": f"No upcoming matches found for '{team_name}'",
+                        "suggestion": f"The team '{team_name}' might not have upcoming fixtures, or try checking the team name spelling",
+                        "total_searched": len(fixtures_response.fixtures)
+                    }]
+                
                 # Sort by date and limit
                 team_matches.sort(key=lambda x: x["startTime"])
                 return team_matches[:10]
                 
             except Exception as e:
                 logger.error(f"Error searching team matches: {e}")
-                return []
+                return [{
+                    "status": "error",
+                    "message": f"Unable to search for '{team_name}' matches: {str(e)}",
+                    "suggestion": "Please try again later or check the team name"
+                }]
         
-        self.tools = [get_tournaments, get_fixtures, get_odds, search_team_matches]
+        @tool
+        async def get_live_matches(tournament_id: Optional[str] = None) -> List[Dict[str, Any]]:
+            """
+            Get currently live matches as an alternative to upcoming fixtures.
+            
+            Args:
+                tournament_id: Optional tournament ID to filter by
+            """
+            try:
+                api_client = await get_api_client()
+                
+                # Get live fixtures using the correct API method signature
+                fixtures_response = await api_client.get_fixtures(
+                    tournament_id=tournament_id,
+                    fixture_type="live",
+                    language="en",
+                    time_zone="UTC"
+                )
+                
+                # Extract fixtures from response
+                fixtures = fixtures_response.fixtures
+                
+                # Check if we have results
+                if not fixtures:
+                    return [{
+                        "status": "no_live_matches",
+                        "message": f"No live matches currently ongoing for tournament {tournament_id or 'all tournaments'}",
+                        "suggestion": "Check back later or try looking for upcoming fixtures",
+                        "total_results": fixtures_response.totalResults
+                    }]
+                
+                # Sort by date and limit results
+                fixtures_list = [f.model_dump() for f in fixtures[:10]]  # Limit to prevent token overflow
+                return fixtures_list
+                
+            except Exception as e:
+                logger.error(f"Error getting live matches: {e}")
+                return [{
+                    "status": "error",
+                    "message": f"Unable to retrieve live matches: {str(e)}",
+                    "suggestion": "Please try again later"
+                }]
+        
+        self.tools = [get_tournaments, get_fixtures, get_live_matches, get_odds, search_team_matches]
         self.llm_with_tools = self.llm.bind_tools(self.tools)
     
     @log_function_call()
@@ -538,10 +638,23 @@ RESPONSE STYLE:
 WHEN USING TOOLS:
 - Use get_tournaments() for tournament/league information
 - Use get_fixtures() for match schedules and upcoming games
+- Use get_live_matches() for currently ongoing matches
 - Use get_odds() for current betting odds and markets
 - Use search_team_matches() when user asks about specific teams
 
-Remember: You're helping users make informed betting decisions, not just providing information."""
+HANDLING EMPTY OR ERROR RESPONSES:
+- If tools return empty data or no results, provide helpful explanations
+- Suggest alternative queries or different tournaments
+- Explain why data might not be available (off-season, no upcoming matches, etc.)
+- Always maintain a helpful tone even when data is unavailable
+- Offer related information or suggestions for what the user could try instead
+
+EXAMPLE RESPONSES FOR COMMON SCENARIOS:
+- No fixtures available: "I don't see any upcoming fixtures for [tournament] right now. This could be because it's the off-season or between match rounds. Would you like me to check other tournaments or show you what tournaments are currently active?"
+- No odds available: "Betting odds aren't available for this match yet. This usually happens when matches are far in the future or betting hasn't opened. Let me help you find matches with available odds."
+- Team not found: "I couldn't find any upcoming matches for [team]. The team name might need to be more specific, or they might not have scheduled matches soon. Can you try the full team name or ask about a different team?"
+
+Remember: You're helping users make informed betting decisions, not just providing information. Always be helpful even when data is limited."""
 
         # Add user-specific context if available
         if user_context:

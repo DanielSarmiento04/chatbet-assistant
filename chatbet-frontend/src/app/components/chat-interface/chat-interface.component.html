@@ -56,8 +56,11 @@
         @for (message of messages(); track message.id) {
           <div class="message-item slide-up" [class.user-message]="message.role === 'user'" [class.bot-message]="message.role === 'assistant'">
             <div class="message-content">
-              <strong>{{ message.role === 'user' ? 'You' : 'ChatBet' }}:</strong>
-              <p>{{ message.content }}</p>
+              <div class="message-header">
+                <strong>{{ message.role === 'user' ? 'You' : 'ChatBet' }}</strong>
+                <span class="message-time">{{ formatMessageTime(message.timestamp) }}</span>
+              </div>
+              <div class="message-text" [innerHTML]="formatMessageContent(message.content)"></div>
             </div>
           </div>
         }

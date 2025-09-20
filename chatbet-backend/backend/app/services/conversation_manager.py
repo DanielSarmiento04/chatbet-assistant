@@ -449,7 +449,15 @@ Just ask me anything about sports betting, and I'll help you make informed decis
             
             # Ensure response content is not empty
             if not response_content or not response_content.strip():
-                response_content = "I apologize, but I'm having trouble generating a response right now. Please try asking your question again."
+                # Provide a more helpful fallback response based on the intent
+                if intent_result.intent == IntentType.MATCH_SCHEDULE_QUERY:
+                    response_content = "I'm currently unable to retrieve match schedules. This might be because the tournament is in an off-season or there are no upcoming matches scheduled. Would you like me to check other tournaments or help you with something else?"
+                elif intent_result.intent == IntentType.ODDS_INFORMATION_QUERY:
+                    response_content = "I'm having trouble retrieving betting odds right now. This could be because betting markets aren't open yet or there's a temporary issue. Can I help you with tournament information or other sports queries instead?"
+                elif intent_result.intent == IntentType.BETTING_RECOMMENDATION:
+                    response_content = "I'm unable to access current match data for betting recommendations right now. However, I can still help you understand betting strategies or explain different types of bets. What would you like to know?"
+                else:
+                    response_content = "I apologize, but I'm having trouble generating a response right now. Please try asking your question again, or try asking about available tournaments or general betting information."
             
             # Create assistant message
             response_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)

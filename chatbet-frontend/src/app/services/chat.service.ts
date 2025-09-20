@@ -423,28 +423,32 @@ export class ChatService {
       next: (message) => {
         console.log('Received WebSocket message:', message);
         try {
-          const sessionId = this.currentSessionIdSignal();
-
-          // Create assistant message from WebSocket response
-          const assistantMessage: ChatMessage = {
-            id: generateUUID(),
-            role: MessageRole.ASSISTANT,
-            content: message.content,
-            timestamp: new Date(),
-            messageType: MessageType.TEXT,
-            sessionId: sessionId || undefined,
-            responseTimeMs: 0 // WebSocket doesn't track this
-          };
-
-          // Add message to conversation
-          this.addMessage(assistantMessage);
+          // Check if this is an update to an existing message (for streaming)
+          const existingMessageIndex = this.messagesSignal().findIndex(m => m.id === message.id);
+          
+          if (existingMessageIndex >= 0) {
+            // Update existing message (for streaming)
+            this.messagesSignal.update(messages => {
+              const updatedMessages = [...messages];
+              updatedMessages[existingMessageIndex] = {
+                ...updatedMessages[existingMessageIndex],
+                content: message.content,
+                timestamp: message.timestamp,
+                responseTimeMs: message.responseTimeMs
+              };
+              return updatedMessages;
+            });
+          } else {
+            // Add new message
+            this.addMessage(message);
+          }
 
           // Clear processing state
           this.isProcessingSignal.set(false);
           this.setTyping(false);
 
-          // Emit message event
-          this.messageSubject.next(assistantMessage);
+          // Emit message event  
+          this.messageSubject.next(message);
 
         } catch (error) {
           console.error('Error handling WebSocket message:', error);

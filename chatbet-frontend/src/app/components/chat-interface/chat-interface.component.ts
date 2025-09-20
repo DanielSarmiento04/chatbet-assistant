@@ -170,6 +170,58 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     this.scrollToBottom();
   }
 
+  // Format message content with basic markdown support
+  formatMessageContent(content: string): string {
+    if (!content) return '';
+
+    // Convert basic markdown to HTML
+    let formatted = content
+      // Bold text: **text** or __text__
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/__(.*?)__/g, '<strong>$1</strong>')
+      // Italic text: *text* or _text_ (but avoid conflicts with list markers)
+      .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em>$1</em>')
+      .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em>$1</em>')
+      // Code: `text`
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      // Line breaks (preserve paragraph structure)
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>')
+      // Lists: * item or - item (improved pattern)
+      .replace(/^[\*\-]\s+(.+)$/gm, '<div class="list-item">• $1</div>')
+      // Numbers in lists: 1. item
+      .replace(/^\d+\.\s+(.+)$/gm, '<div class="list-item numbered">$1</div>');
+
+    // Wrap content in paragraphs if not already wrapped
+    if (!formatted.includes('<p>') && !formatted.includes('<div class="list-item">')) {
+      formatted = `<p>${formatted}</p>`;
+    } else if (formatted.includes('<p>')) {
+      formatted = `<p>${formatted}</p>`;
+    }
+
+    return formatted;
+  }
+
+  // Format message timestamp
+  formatMessageTime(timestamp: Date): string {
+    if (!timestamp) return '';
+
+    const now = new Date();
+    const messageDate = new Date(timestamp);
+    const diffInMinutes = Math.floor((now.getTime() - messageDate.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 1) {
+      return 'Just now';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes}m ago`;
+    } else if (diffInMinutes < 1440) { // 24 hours
+      const hours = Math.floor(diffInMinutes / 60);
+      return `${hours}h ago`;
+    } else {
+      return messageDate.toLocaleDateString();
+    }
+  }
+
   // Scroll event handler to disable auto-scroll when user scrolls up
   onScroll(): void {
     if (this.messagesContainer) {

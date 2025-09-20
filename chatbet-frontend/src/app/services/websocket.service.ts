@@ -306,18 +306,54 @@ export class WebSocketService {
           this.messageSubject.next(chatMessage);
           break;
 
-        case 'streaming_response':
-          // Handle streaming messages
-          const streamingMessage: ChatMessage = {
+        case 'streaming_start':
+          if (environment.enableLogging) {
+            console.log('Streaming started for session:', message.session_id);
+          }
+          // Create initial streaming message
+          const initialStreamingMessage: ChatMessage = {
             id: message.message_id || generateUUID(),
             role: MessageRole.ASSISTANT,
-            content: message.content,
+            content: '',
             timestamp: new Date(message.timestamp),
             messageType: MessageType.TEXT,
             sessionId: message.session_id,
             responseTimeMs: 0
           };
-          this.messageSubject.next(streamingMessage);
+          this.streamingMessages.set(message.session_id, initialStreamingMessage);
+          this.messageSubject.next(initialStreamingMessage);
+          break;
+
+        case 'streaming_response':
+          // Handle streaming message chunks
+          const existingStreamingMessage = this.streamingMessages.get(message.session_id);
+          if (existingStreamingMessage && message.full_content) {
+            // Update the existing message with accumulated content
+            const updatedMessage: ChatMessage = {
+              ...existingStreamingMessage,
+              content: message.full_content,
+              timestamp: new Date(message.timestamp)
+            };
+            this.streamingMessages.set(message.session_id, updatedMessage);
+            this.messageSubject.next(updatedMessage);
+          }
+          break;
+
+        case 'streaming_end':
+          if (environment.enableLogging) {
+            console.log('Streaming ended for session:', message.session_id);
+          }
+          // Finalize the streaming message
+          const finalStreamingMessage = this.streamingMessages.get(message.session_id);
+          if (finalStreamingMessage && message.final_content) {
+            const finalMessage: ChatMessage = {
+              ...finalStreamingMessage,
+              content: message.final_content,
+              responseTimeMs: message.response_time_ms || 0
+            };
+            this.messageSubject.next(finalMessage);
+            this.streamingMessages.delete(message.session_id);
+          }
           break;
 
         case 'typing':
@@ -378,18 +414,6 @@ export class WebSocketService {
         case 'pong':
           if (environment.enableLogging) {
             console.log('Pong received');
-          }
-          break;
-
-        case 'streaming_start':
-          if (environment.enableLogging) {
-            console.log('Streaming started for session:', message.session_id);
-          }
-          break;
-
-        case 'streaming_end':
-          if (environment.enableLogging) {
-            console.log('Streaming ended for session:', message.session_id);
           }
           break;
 

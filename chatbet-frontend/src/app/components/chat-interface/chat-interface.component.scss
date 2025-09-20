@@ -168,6 +168,7 @@
 
       .message-item {
         animation: slideUp var(--chatbet-animation-medium) ease-out;
+        counter-reset: list-counter; // Reset counter for each message
 
         .message-content {
           background: var(--chatbet-bg-card);
@@ -177,18 +178,75 @@
           max-width: 70%;
           word-wrap: break-word;
 
-          strong {
-            color: var(--chatbet-primary);
-            font-weight: 600;
-            display: block;
+          .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: var(--chatbet-spacing-xs);
+
+            strong {
+              color: var(--chatbet-primary);
+              font-weight: 600;
+              font-size: 0.875rem;
+            }
+
+            .message-time {
+              font-size: 0.75rem;
+              color: var(--chatbet-text-secondary);
+              opacity: 0.7;
+            }
           }
 
-          p {
-            margin: 0;
-            line-height: 1.5;
+          .message-text {
+            line-height: 1.6;
             color: var(--chatbet-text-primary);
-            white-space: pre-wrap; // Preserve line breaks
+
+            // Formatted text styles
+            strong {
+              font-weight: 600;
+              color: inherit;
+            }
+
+            em {
+              font-style: italic;
+            }
+
+            code {
+              background: rgba(0, 0, 0, 0.1);
+              padding: 2px 4px;
+              border-radius: 3px;
+              font-family: 'Courier New', monospace;
+              font-size: 0.875em;
+            }
+
+            .list-item {
+              margin: var(--chatbet-spacing-xs) 0;
+              padding-left: var(--chatbet-spacing-sm);
+
+              &.numbered {
+                counter-increment: list-counter;
+
+                &::before {
+                  content: counter(list-counter) ". ";
+                  font-weight: 600;
+                  color: var(--chatbet-primary);
+                }
+              }
+            }
+
+            // Reset margins for better spacing
+            p {
+              margin: 0 0 var(--chatbet-spacing-xs) 0;
+              line-height: 1.5;
+
+              &:first-child {
+                margin-top: 0;
+              }
+
+              &:last-child {
+                margin-bottom: 0;
+              }
+            }
           }
 
           &:hover {
@@ -202,8 +260,16 @@
           background: var(--chatbet-message-user-bg);
           color: var(--chatbet-message-user-text);
 
-          strong, p {
+          .message-header strong,
+          .message-text,
+          .message-text strong,
+          .message-text em,
+          .message-time {
             color: var(--chatbet-message-user-text);
+          }
+
+          .message-text code {
+            background: rgba(255, 255, 255, 0.2);
           }
         }
 
@@ -213,12 +279,20 @@
           background: var(--chatbet-message-bot-bg);
           color: var(--chatbet-message-bot-text);
 
-          strong {
+          .message-header strong {
             color: var(--chatbet-primary);
           }
 
-          p {
+          .message-text {
             color: var(--chatbet-message-bot-text);
+
+            strong {
+              color: var(--chatbet-primary);
+            }
+
+            .list-item.numbered::before {
+              color: var(--chatbet-primary);
+            }
           }
         }
       }
@@ -435,6 +509,21 @@
       .chat-messages {
         .message-item .message-content {
           max-width: 85%;
+          padding: var(--chatbet-spacing-sm);
+
+          .message-header {
+            .message-time {
+              font-size: 0.7rem;
+            }
+          }
+
+          .message-text {
+            font-size: 0.9rem;
+
+            .list-item {
+              padding-left: var(--chatbet-spacing-xs);
+            }
+          }
         }
       }
     }
@@ -476,6 +565,20 @@
         .message-item .message-content {
           max-width: 95%;
           padding: var(--chatbet-spacing-sm);
+
+          .message-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--chatbet-spacing-xs);
+
+            .message-time {
+              font-size: 0.65rem;
+            }
+          }
+
+          .message-text {
+            font-size: 0.875rem;
+          }
         }
       }
     }
