@@ -36,6 +36,78 @@ from ..services.chatbet_api import get_api_client
 logger = get_logger(__name__)
 
 
+# Cache for tournament mapping
+_tournament_cache: Optional[Dict[str, str]] = None
+
+async def _get_tournament_id_mapping() -> Dict[str, str]:
+    """
+    Get mapping of tournament names to IDs.
+    
+    Returns a dictionary mapping lowercase tournament names to their API IDs.
+    """
+    global _tournament_cache
+    
+    if _tournament_cache is not None:
+        return _tournament_cache
+    
+    try:
+        api_client = await get_api_client()
+        all_tournaments = await api_client.get_all_tournaments(with_active_fixtures=True)
+        
+        mapping = {}
+        for sport in all_tournaments:
+            for tournament in sport.tournaments:
+                name_lower = tournament.name.lower()
+                mapping[name_lower] = tournament.tournamentId
+                
+                # Add common aliases
+                if "la liga" in name_lower:
+                    mapping["la liga"] = tournament.tournamentId
+                    mapping["spanish league"] = tournament.tournamentId
+                elif "premier league" in name_lower:
+                    mapping["premier league"] = tournament.tournamentId
+                    mapping["english league"] = tournament.tournamentId
+                elif "bundesliga" in name_lower:
+                    mapping["bundesliga"] = tournament.tournamentId
+                    mapping["german league"] = tournament.tournamentId
+                elif "serie a" in name_lower:
+                    mapping["serie a"] = tournament.tournamentId
+                    mapping["italian league"] = tournament.tournamentId
+                elif "ligue 1" in name_lower:
+                    mapping["ligue 1"] = tournament.tournamentId
+                    mapping["french league"] = tournament.tournamentId
+        
+        _tournament_cache = mapping
+        logger.info(f"Cached {len(mapping)} tournament mappings")
+        return mapping
+        
+    except Exception as e:
+        logger.error(f"Failed to build tournament mapping: {e}")
+        return {}
+
+
+async def _resolve_tournament_id(tournament_input: Optional[str]) -> Optional[str]:
+    """
+    Resolve tournament input to a valid tournament ID.
+    
+    Args:
+        tournament_input: Could be a tournament ID, name, or None
+        
+    Returns:
+        Valid tournament ID or None
+    """
+    if not tournament_input:
+        return None
+    
+    # If it's already a numeric ID, return as-is
+    if tournament_input.isdigit():
+        return tournament_input
+    
+    # Try to find by name
+    mapping = await _get_tournament_id_mapping()
+    return mapping.get(tournament_input.lower())
+
+
 async def _retry_api_call(func, max_retries: int = 2, delay: float = 1.0, *args, **kwargs):
     """
     Internal retry helper for API calls.
@@ -221,15 +293,26 @@ Be accurate and confident in your classifications. Consider context and user int
             Get upcoming match fixtures.
             
             Args:
-                tournament_id: Optional tournament ID to filter by
+                tournament_id: Optional tournament ID to filter by (can be name like "La Liga" or ID like "545")
                 days_ahead: Number of days ahead to look for matches (default 7)
             """
             async def _get_fixtures_impl():
                 api_client = await get_api_client()
                 
+                # Resolve tournament ID if provided
+                resolved_tournament_id = None
+                if tournament_id:
+                    resolved_tournament_id = await _resolve_tournament_id(tournament_id)
+                    if not resolved_tournament_id:
+                        return [{
+                            "status": "invalid_tournament",
+                            "message": f"Tournament '{tournament_id}' not found or not available",
+                            "suggestion": "Try using a different tournament name or check available tournaments first"
+                        }]
+                
                 # Get fixtures using the correct API method signature
                 fixtures_response = await api_client.get_fixtures(
-                    tournament_id=tournament_id,
+                    tournament_id=resolved_tournament_id,
                     fixture_type="pre_match",
                     language="en",
                     time_zone="UTC"
@@ -431,14 +514,25 @@ Be accurate and confident in your classifications. Consider context and user int
             Get currently live matches as an alternative to upcoming fixtures.
             
             Args:
-                tournament_id: Optional tournament ID to filter by
+                tournament_id: Optional tournament ID to filter by (can be name like "La Liga" or ID like "545")
             """
             try:
                 api_client = await get_api_client()
                 
+                # Resolve tournament ID if provided
+                resolved_tournament_id = None
+                if tournament_id:
+                    resolved_tournament_id = await _resolve_tournament_id(tournament_id)
+                    if not resolved_tournament_id:
+                        return [{
+                            "status": "invalid_tournament",
+                            "message": f"Tournament '{tournament_id}' not found or not available",
+                            "suggestion": "Try using a different tournament name or check available tournaments first"
+                        }]
+                
                 # Get live fixtures using the correct API method signature
                 fixtures_response = await api_client.get_fixtures(
-                    tournament_id=tournament_id,
+                    tournament_id=resolved_tournament_id,
                     fixture_type="live",
                     language="en",
                     time_zone="UTC"
