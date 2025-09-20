@@ -130,6 +130,10 @@ export class WebSocketService {
       metadata: {}
     };
 
+    if (environment.enableLogging) {
+      console.log('Sending WebSocket message:', message);
+    }
+
     this.sendWebSocketMessage(message);
   }
 
@@ -195,11 +199,11 @@ export class WebSocketService {
    */
   private buildWebSocketUrl(): string {
     const baseUrl = environment.wsUrl.replace('http', 'ws');
-    
+
     // For now, connect without token since backend WebSocket doesn't expect it yet
     // In future iterations, we can add: ?token=${encodeURIComponent(token)}
     // when backend WebSocket endpoint is updated to handle token authentication
-    
+
     return baseUrl;
   }
 
@@ -252,29 +256,77 @@ export class WebSocketService {
    */
   private handleIncomingMessage(data: string): void {
     try {
-      const message = JSON.parse(data) as WebSocketMessage;
+      const message = JSON.parse(data);
 
+      if (environment.enableLogging) {
+        console.log('Received WebSocket message:', message);
+      }
+
+      // Handle backend message format (direct properties)
       switch (message.type) {
-        case 'message':
-          const chatMessage = this.parseIncomingMessage(message.data);
-          if (chatMessage) {
-            this.messageSubject.next(chatMessage);
-          }
+        case 'bot_response':
+          const chatMessage: ChatMessage = {
+            id: message.message_id || generateUUID(),
+            role: MessageRole.ASSISTANT,
+            content: message.content,
+            timestamp: new Date(message.timestamp),
+            messageType: MessageType.TEXT,
+            sessionId: message.session_id,
+            responseTimeMs: message.response_time_ms || 0
+          };
+          this.messageSubject.next(chatMessage);
+          break;
+
+        case 'streaming_response':
+          // Handle streaming messages
+          const streamingMessage: ChatMessage = {
+            id: message.message_id || generateUUID(),
+            role: MessageRole.ASSISTANT,
+            content: message.content,
+            timestamp: new Date(message.timestamp),
+            messageType: MessageType.TEXT,
+            sessionId: message.session_id,
+            responseTimeMs: 0
+          };
+          this.messageSubject.next(streamingMessage);
           break;
 
         case 'typing':
-          const typingData = message.data as WebSocketEventData;
           const typingIndicator: TypingIndicator = {
-            userId: typingData['userId'] as string,
-            isTyping: typingData['isTyping'] as boolean,
-            sessionId: typingData['sessionId'] as string
+            userId: message.user_id || 'unknown',
+            isTyping: message.is_typing,
+            sessionId: message.session_id
           };
           this.typingSubject.next(typingIndicator);
           break;
 
+        case 'pong':
+          // Handle pong responses
+          if (environment.enableLogging) {
+            console.log('Received pong:', message);
+          }
+          break;
+
+        case 'connection_ack':
+          // Handle connection acknowledgment
+          if (environment.enableLogging) {
+            console.log('Connection acknowledged:', message);
+          }
+          break;
+
         case 'error':
-          this.lastErrorSignal.set(message.data as string || 'WebSocket error');
+          // Handle error messages
+          console.error('WebSocket error:', message);
+          this.lastErrorSignal.set(message.content || 'Unknown error');
           this.systemSubject.next(message);
+          break;
+
+        case 'message':
+          // Legacy frontend format support (fallback)
+          const legacyMessage = this.parseIncomingMessage(message.data);
+          if (legacyMessage) {
+            this.messageSubject.next(legacyMessage);
+          }
           break;
 
         case 'connection':
@@ -329,7 +381,14 @@ export class WebSocketService {
    */
   private sendWebSocketMessage(message: WebSocketMessage | any): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
+      if (environment.enableLogging) {
+        console.log('Sending to WebSocket:', JSON.stringify(message));
+      }
       this.socket.send(JSON.stringify(message));
+    } else {
+      if (environment.enableLogging) {
+        console.error('Cannot send message: WebSocket not open. State:', this.socket?.readyState);
+      }
     }
   }
 

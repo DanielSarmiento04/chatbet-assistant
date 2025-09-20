@@ -303,7 +303,7 @@ export class AuthService {
     // For ChatBet, just update locally since we don't have a user profile endpoint
     this.userSignal.set(updatedUser);
     this.storeUser(updatedUser);
-    
+
     return true;
   }
 

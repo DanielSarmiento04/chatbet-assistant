@@ -111,17 +111,23 @@ export class ChatService {
    * Send a message in the current conversation
    */
   async sendMessage(content: string, userId?: string): Promise<void> {
+    console.log('ChatService.sendMessage called with:', { content, userId });
+
     if (!this.canSendMessage() || !content.trim()) {
+      console.log('Cannot send message: conditions not met');
       return;
     }
 
     // Check WebSocket connection
     if (!this.webSocketService.isConnected()) {
+      console.log('WebSocket not connected');
       this.lastErrorSignal.set('Not connected to chat service');
       return;
     }
 
     const sessionId = this.ensureSession();
+    console.log('Using session ID:', sessionId);
+
     const userMessage = this.createUserMessage(content, sessionId, userId);
 
     try {
@@ -140,6 +146,7 @@ export class ChatService {
 
       // Get current user ID
       const currentUserId = userId || this.authService.userId() || 'anonymous';
+      console.log('Sending WebSocket message with userId:', currentUserId);
 
       // Send message via WebSocket instead of HTTP API
       this.webSocketService.sendMessage(content, sessionId, currentUserId);
@@ -415,9 +422,10 @@ export class ChatService {
     // Listen for incoming messages from WebSocket
     this.webSocketService.message$.subscribe({
       next: (message) => {
+        console.log('Received WebSocket message:', message);
         try {
           const sessionId = this.currentSessionIdSignal();
-          
+
           // Create assistant message from WebSocket response
           const assistantMessage: ChatMessage = {
             id: generateUUID(),
