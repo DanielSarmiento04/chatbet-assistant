@@ -20,7 +20,7 @@
 **Video de Demostración**: `output_o.mp4`
 
 <video width="320" height="240" controls>
-  <source src="output_o.mp4" type="video/mp4">
+  <source src="./output_o.mp4" type="video/mp4">
 </video>
 
 La demostración incluye:
@@ -401,6 +401,31 @@ Este proyecto proporciona documentación bilingüe completa:
 
 Toda la documentación mantiene paridad de características entre idiomas con terminología técnica apropiada y localización cultural.
 
+## 🤝 Contribuciones
+
+### Guías de Desarrollo
+1. Hacer fork del repositorio
+2. Crear rama característica: `git checkout -b feature/caracteristica-increible`
+3. Hacer cambios siguiendo estándares de código
+4. Ejecutar pruebas: `bun run test` (frontend) o `pytest` (backend)
+5. Hacer commit de cambios: `git commit -m "Agregar característica increíble"`
+6. Push a la rama: `git push origin feature/caracteristica-increible`
+7. Abrir Pull Request
+
+### Estándares de Código
+- **Backend**: Seguir PEP 8 con formateo Black
+- **Frontend**: Seguir guía estilo Angular con ESLint
+- **TypeScript**: Modo estricto habilitado con cobertura tipos completa
+- **Testing**: Mínimo 80% cobertura código requerida
+- **Documentación**: Actualizar archivos README relevantes para cambios
+
+## 📄 Licencia
+
+Este proyecto es parte de una evaluación técnica para ChatBet.
+
+## 🙋‍♂️ Soporte y Contacto
+
+Para preguntas, problemas o soporte:
 
 ### Documentación
 - Backend API: http://localhost:8000/docs
