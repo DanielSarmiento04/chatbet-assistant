@@ -206,7 +206,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 # Include existing and new routers
 app.include_router(llm_service.router)
 app.include_router(health_router, prefix="/health", tags=["health"])
-app.include_router(auth_router, prefix="/api/v1/auth", tags=["authentication"])
+app.include_router(auth_router, prefix="/api/v1", tags=["authentication"])
 app.include_router(
     chat_router, 
     prefix="/api/v1/chat", 

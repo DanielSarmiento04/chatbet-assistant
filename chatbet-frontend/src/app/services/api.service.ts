@@ -46,7 +46,7 @@ export class ApiService {
    */
   readonly chat = {
     sendMessage: (request: ChatRequest): Observable<ChatResponse> => {
-      return this.post<ChatResponse>('/chat/message', request, 'sendMessage');
+      return this.post<ChatResponse>('/api/v1/chat/message', request, 'sendMessage');
     },
 
     getConversationHistory: (
@@ -61,7 +61,7 @@ export class ApiService {
         .set('session_id', sessionId || '');
 
       return this.get<PaginatedResponse<ConversationSummary>>(
-        `/chat/conversations/${userId}`,
+        `/api/v1/chat/conversations/${userId}`,
         'getConversationHistory',
         { params }
       );
@@ -70,7 +70,7 @@ export class ApiService {
     clearConversationHistory: (userId: string, sessionId?: string): Observable<{ message: string }> => {
       const params = sessionId ? new HttpParams().set('session_id', sessionId) : undefined;
       return this.delete<{ message: string }>(
-        `/chat/conversations/${userId}`,
+        `/api/v1/chat/conversations/${userId}`,
         'clearConversationHistory',
         { params }
       );
@@ -78,7 +78,7 @@ export class ApiService {
 
     getSupportedIntents: (): Observable<{ supported_intents: unknown[]; total_count: number }> => {
       return this.get<{ supported_intents: unknown[]; total_count: number }>(
-        '/chat/intents',
+        '/api/v1/chat/intents',
         'getSupportedIntents'
       ).pipe(
         shareReplay(1) // Cache the intents
@@ -133,19 +133,19 @@ export class ApiService {
    */
   readonly auth = {
     generateToken: (): Observable<{ token: string }> => {
-      return this.post<{ token: string }>('/auth/generate_token', {}, 'generateToken');
+      return this.post<{ token: string }>('/api/v1/auth/generate_token', {}, 'generateToken');
     },
 
     validateToken: (): Observable<{ message: string }> => {
-      return this.post<{ message: string }>('/auth/validate_token', {}, 'validateToken');
+      return this.post<{ message: string }>('/api/v1/auth/validate_token', {}, 'validateToken');
     },
 
     getUserInfo: (): Observable<User> => {
-      return this.get<User>('/auth/user_info', 'getUserInfo');
+      return this.get<User>('/api/v1/auth/user_info', 'getUserInfo');
     },
 
     refreshToken: (): Observable<{ token: string }> => {
-      return this.post<{ token: string }>('/auth/refresh_token', {}, 'refreshToken');
+      return this.post<{ token: string }>('/api/v1/auth/refresh_token', {}, 'refreshToken');
     },
 
     // Legacy methods (kept for potential future use)
