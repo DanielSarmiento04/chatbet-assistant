@@ -164,11 +164,18 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     }
   }
 
+  // Manual scroll to bottom triggered by user button click
+  scrollToBottomManual(): void {
+    this.shouldScrollToBottom.set(true);
+    this.scrollToBottom();
+  }
+
   // Scroll event handler to disable auto-scroll when user scrolls up
   onScroll(): void {
     if (this.messagesContainer) {
       const element = this.messagesContainer.nativeElement;
-      const isScrolledToBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+      const threshold = 100; // Pixels from bottom
+      const isScrolledToBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + threshold;
       this.shouldScrollToBottom.set(isScrolledToBottom);
     }
   }

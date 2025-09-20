@@ -38,6 +38,8 @@ export class WebSocketService {
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private connectedSessionId: string | null = null;
+  private streamingMessages = new Map<string, ChatMessage>(); // Track streaming messages by session_id
 
   // Connection state signals
   private readonly statusSignal = signal<WebSocketStatus>(WebSocketStatus.DISCONNECTED);
@@ -108,6 +110,7 @@ export class WebSocketService {
 
     this.statusSignal.set(WebSocketStatus.DISCONNECTED);
     this.connectionTimeSignal.set(null);
+    this.connectedSessionId = null;
     this.reconnectAttempts = 0;
   }
 
@@ -119,13 +122,16 @@ export class WebSocketService {
       throw new Error('WebSocket not connected');
     }
 
+    // Use the session_id from the WebSocket connection, not the one passed in
+    const activeSessionId = this.connectedSessionId || sessionId;
+
     // Send message using backend WSUserMessage structure
     const message = {
       type: 'user_message',
       content,
       user_id: userId,
       timestamp: new Date().toISOString(),
-      session_id: sessionId,
+      session_id: activeSessionId,
       message_id: generateUUID(),
       metadata: {}
     };
@@ -145,12 +151,15 @@ export class WebSocketService {
       return;
     }
 
+    // Use the session_id from the WebSocket connection
+    const activeSessionId = this.connectedSessionId || sessionId;
+
     // Send typing using backend WSTypingIndicator structure
     const message = {
       type: 'typing',
       is_typing: isTyping,
       timestamp: new Date().toISOString(),
-      session_id: sessionId,
+      session_id: activeSessionId,
       message_id: generateUUID(),
       estimated_time_seconds: null
     };
@@ -200,14 +209,15 @@ export class WebSocketService {
   private buildWebSocketUrl(): string {
     const baseUrl = environment.wsUrl.replace('http', 'ws');
 
-    // For now, connect without token since backend WebSocket doesn't expect it yet
-    // In future iterations, we can add: ?token=${encodeURIComponent(token)}
-    // when backend WebSocket endpoint is updated to handle token authentication
+    // Add user_id as query parameter if available
+    const userId = this.authService.userId();
+    if (userId) {
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      return `${baseUrl}${separator}user_id=${encodeURIComponent(userId)}`;
+    }
 
     return baseUrl;
-  }
-
-  /**
+  }  /**
    * Setup socket event handlers
    */
   private setupSocketEventHandlers(): void {
@@ -264,6 +274,25 @@ export class WebSocketService {
 
       // Handle backend message format (direct properties)
       switch (message.type) {
+        case 'connection_ack':
+          // Store the session_id from the backend
+          this.connectedSessionId = message.session_id;
+          if (environment.enableLogging) {
+            console.log('Connection acknowledged with session_id:', message.session_id);
+          }
+          break;
+
+        case 'session_created':
+          // Handle session creation notification
+          if (environment.enableLogging) {
+            console.log('Session created:', message.session_id);
+          }
+          // The session_id should already be set from connection_ack, but update if needed
+          if (!this.connectedSessionId) {
+            this.connectedSessionId = message.session_id;
+          }
+          break;
+
         case 'bot_response':
           const chatMessage: ChatMessage = {
             id: message.message_id || generateUUID(),
@@ -332,6 +361,36 @@ export class WebSocketService {
         case 'connection':
         case 'disconnect':
           this.systemSubject.next(message);
+          break;
+
+        case 'session_resumed':
+          if (environment.enableLogging) {
+            console.log('Session resumed:', message.session_id);
+          }
+          break;
+
+        case 'session_ended':
+          if (environment.enableLogging) {
+            console.log('Session ended:', message.session_id, 'reason:', message.reason);
+          }
+          break;
+
+        case 'pong':
+          if (environment.enableLogging) {
+            console.log('Pong received');
+          }
+          break;
+
+        case 'streaming_start':
+          if (environment.enableLogging) {
+            console.log('Streaming started for session:', message.session_id);
+          }
+          break;
+
+        case 'streaming_end':
+          if (environment.enableLogging) {
+            console.log('Streaming ended for session:', message.session_id);
+          }
           break;
 
         default:
@@ -440,11 +499,11 @@ export class WebSocketService {
     this.heartbeatTimer = setInterval(() => {
       if (this.socket?.readyState === WebSocket.OPEN) {
         // Send ping message with required fields to match backend WSPing model
-        const sessionId = this.getCurrentSessionId();
+        const sessionId = this.connectedSessionId || 'heartbeat';
         this.socket.send(JSON.stringify({
           type: 'ping',
           timestamp: new Date().toISOString(),
-          session_id: sessionId || 'heartbeat',
+          session_id: sessionId,
           message_id: generateUUID()
         }));
       }
@@ -455,9 +514,8 @@ export class WebSocketService {
    * Get current session ID (we might need to track this)
    */
   private getCurrentSessionId(): string | null {
-    // For now, return a default session ID
-    // In the future, this should track the actual session
-    return 'default-session';
+    // Return the session ID assigned by the backend during connection
+    return this.connectedSessionId;
   }
 
   /**

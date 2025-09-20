@@ -64,6 +64,32 @@
     overflow-y: auto;
     padding: var(--chatbet-spacing-md);
     background-color: var(--chatbet-bg-secondary);
+    position: relative;
+
+    .scroll-to-bottom-btn {
+      position: absolute;
+      bottom: var(--chatbet-spacing-lg);
+      right: var(--chatbet-spacing-lg);
+      width: 48px;
+      height: 48px;
+      background-color: var(--chatbet-primary);
+      color: white;
+      box-shadow: var(--chatbet-shadow-lg);
+      z-index: 10;
+      transition: all var(--chatbet-animation-fast) ease;
+      animation: fadeIn var(--chatbet-animation-medium) ease-in-out;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--chatbet-shadow-xl);
+      }
+
+      mat-icon {
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+    }
 
     .chat-messages {
       max-width: 800px;
@@ -162,6 +188,7 @@
             margin: 0;
             line-height: 1.5;
             color: var(--chatbet-text-primary);
+            white-space: pre-wrap; // Preserve line breaks
           }
 
           &:hover {
@@ -169,7 +196,8 @@
           }
         }
 
-        &:nth-child(odd) .message-content {
+        // User messages (right-aligned)
+        &.user-message .message-content {
           margin-left: auto;
           background: var(--chatbet-message-user-bg);
           color: var(--chatbet-message-user-text);
@@ -179,7 +207,8 @@
           }
         }
 
-        &:nth-child(even) .message-content {
+        // Bot messages (left-aligned)
+        &.bot-message .message-content {
           margin-right: auto;
           background: var(--chatbet-message-bot-bg);
           color: var(--chatbet-message-bot-text);
@@ -364,6 +393,28 @@
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

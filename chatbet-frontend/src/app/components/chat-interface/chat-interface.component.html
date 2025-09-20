@@ -54,7 +54,7 @@
       } @else {
         <!-- Message List -->
         @for (message of messages(); track message.id) {
-          <div class="message-item slide-up">
+          <div class="message-item slide-up" [class.user-message]="message.role === 'user'" [class.bot-message]="message.role === 'assistant'">
             <div class="message-content">
               <strong>{{ message.role === 'user' ? 'You' : 'ChatBet' }}:</strong>
               <p>{{ message.content }}</p>
@@ -80,6 +80,13 @@
       <!-- Auto-scroll anchor -->
       <div #scrollAnchor></div>
     </div>
+
+    <!-- Scroll to Bottom Button -->
+    @if (!shouldScrollToBottom() && messages().length > 0) {
+      <button mat-fab class="scroll-to-bottom-btn" (click)="scrollToBottomManual()" matTooltip="Scroll to bottom">
+        <mat-icon>keyboard_arrow_down</mat-icon>
+      </button>
+    }
   </div>
 
   <!-- Chat Input -->

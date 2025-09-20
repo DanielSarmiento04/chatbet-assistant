@@ -67,8 +67,7 @@ export class ChatService {
   });
   readonly messageCount = computed(() => this.messagesSignal().length);
   readonly canSendMessage = computed(() => {
-    return this.pendingMessageSignal().trim().length > 0 &&
-           !this.isProcessingSignal() &&
+    return !this.isProcessingSignal() &&
            !this.isTypingSignal();
   });
 
@@ -144,8 +143,8 @@ export class ChatService {
       // Emit typing indicator
       this.setTyping(true);
 
-      // Get current user ID
-      const currentUserId = userId || this.authService.userId() || 'anonymous';
+      // Get current user ID with fallback
+      const currentUserId = userId || this.authService.userId() || 'chatbet_user';
       console.log('Sending WebSocket message with userId:', currentUserId);
 
       // Send message via WebSocket instead of HTTP API
