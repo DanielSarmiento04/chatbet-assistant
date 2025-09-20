@@ -160,8 +160,7 @@ Be accurate and confident in your classifications. Consider context and user int
             """Get list of available tournaments and competitions."""
             try:
                 api_client = await get_api_client()
-                tournaments = await api_client.get_tournaments()
-                
+                tournaments = await api_client.get_tournaments()                
                 if not tournaments:
                     return [{
                         "status": "no_tournaments", 

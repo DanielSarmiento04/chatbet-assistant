@@ -372,12 +372,7 @@ export class WebSocketService {
           }
           break;
 
-        case 'connection_ack':
-          // Handle connection acknowledgment
-          if (environment.enableLogging) {
-            console.log('Connection acknowledged:', message);
-          }
-          break;
+
 
         case 'error':
           // Handle error messages
@@ -408,12 +403,6 @@ export class WebSocketService {
         case 'session_ended':
           if (environment.enableLogging) {
             console.log('Session ended:', message.session_id, 'reason:', message.reason);
-          }
-          break;
-
-        case 'pong':
-          if (environment.enableLogging) {
-            console.log('Pong received');
           }
           break;
 

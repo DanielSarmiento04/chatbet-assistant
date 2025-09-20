@@ -37,6 +37,9 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
   errorMessage = signal<string | null>(null);
   shouldScrollToBottom = signal(true);
   showChatHistory = signal(false);
+  isUserScrolling = signal(false);
+  scrollTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  lastScrollTime = 0;
 
   // Computed values
   getInputPlaceholder = computed(() => {
@@ -72,12 +75,16 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
   }
 
   ngOnDestroy(): void {
+    // Clean up scroll timeout
+    if (this.scrollTimeoutId) {
+      clearTimeout(this.scrollTimeoutId);
+    }
     // Cleanup handled by services
   }
 
   ngAfterViewChecked(): void {
-    // Auto-scroll to bottom when new messages arrive
-    if (this.shouldScrollToBottom()) {
+    // Only auto-scroll if user is not manually scrolling and we should scroll to bottom
+    if (this.shouldScrollToBottom() && !this.isUserScrolling()) {
       this.scrollToBottom();
     }
   }
@@ -117,6 +124,8 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     }
 
     this.clearError();
+    // When user sends message, reset scrolling state and enable auto-scroll
+    this.isUserScrolling.set(false);
     this.shouldScrollToBottom.set(true);
 
     try {
@@ -166,6 +175,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
   // Manual scroll to bottom triggered by user button click
   scrollToBottomManual(): void {
+    this.isUserScrolling.set(false); // Reset user scrolling flag
     this.shouldScrollToBottom.set(true);
     this.scrollToBottom();
   }
@@ -223,12 +233,37 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
   }
 
   // Scroll event handler to disable auto-scroll when user scrolls up
-  onScroll(): void {
-    if (this.messagesContainer) {
-      const element = this.messagesContainer.nativeElement;
-      const threshold = 100; // Pixels from bottom
-      const isScrolledToBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + threshold;
-      this.shouldScrollToBottom.set(isScrolledToBottom);
+  onScroll() {
+    // Throttle scroll events to prevent excessive firing
+    const now = Date.now();
+    if (now - this.lastScrollTime < 50) { // 50ms throttle
+      return;
     }
+    this.lastScrollTime = now;
+
+    const element = this.messagesContainer?.nativeElement;
+    if (!element) return;
+
+    // Set user scrolling flag when user scrolls manually
+    this.isUserScrolling.set(true);
+    
+    // Clear existing timeout
+    if (this.scrollTimeoutId) {
+      clearTimeout(this.scrollTimeoutId);
+    }
+
+    // Clear user scrolling flag after 150ms of no scrolling
+    this.scrollTimeoutId = setTimeout(() => {
+      this.isUserScrolling.set(false);
+    }, 150);
+
+    // Update should scroll to bottom based on position
+    const scrollHeight = element.scrollHeight;
+    const scrollTop = element.scrollTop;
+    const clientHeight = element.clientHeight;
+    
+    this.shouldScrollToBottom.set(
+      scrollTop + clientHeight >= scrollHeight - 10
+    );
   }
 }
